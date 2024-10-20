@@ -10,7 +10,11 @@ file(GLOB_RECURSE HEADERS
 	src/*.h
 )
 
+find_package(OpenCV REQUIRED)
+
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE src PRIVATE ${OpenCV_INCLUDE_DIRS})
+
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
