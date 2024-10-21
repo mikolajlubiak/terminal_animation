@@ -1,10 +1,9 @@
 // local
-#include "image_to_ascii.hpp"
+#include "animation_ui.hpp"
 
 int main() {
-  VideoToAscii vid_to_ascii = VideoToAscii("gif.gif");
 
-  vid_to_ascii.AnimateVideo();
+  terminal_animation::AnimationUI animation_ui{};
 
   return 0;
 }

@@ -18,6 +18,21 @@ file(GLOB_RECURSE HEADERS
 # Find OpenCV
 find_package(OpenCV REQUIRED)
 
+# Get FTXUI
+include(FetchContent)
+
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+set(FETCHCONTENT_QUIET OFF)
+
+FetchContent_Declare(ftxui
+	GIT_REPOSITORY https://github.com/arthursonzogni/ftxui.git
+	GIT_TAG        v5.0.0
+	GIT_PROGRESS   TRUE
+	GIT_SHALLOW    TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(ftxui)
+
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
@@ -25,4 +40,8 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_include_directories(${PROJECT_NAME} PRIVATE src PUBLIC ${OpenCV_INCLUDE_DIRS})
 
 # Add libraries to link
-target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS}
+	PRIVATE ftxui::screen
+	PRIVATE ftxui::dom
+	PRIVATE ftxui::component
+)
