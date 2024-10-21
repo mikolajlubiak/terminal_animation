@@ -1,6 +1,9 @@
 // header
 #include "animation_ui.hpp"
 
+// local
+#include "common.hpp"
+
 // std
 #include <future>
 
@@ -29,18 +32,15 @@ ftxui::Component AnimationUI::CreateRenderer() {
 // Create static UI game element
 ftxui::Element AnimationUI::CreateCanvas() {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
-    std::uint32_t x = 0;
-    std::uint32_t y = 0;
-    for (auto c : m_CanvasText) {
-      if (c == '\n') {
-        y += 4;
-        x = 0;
-        continue;
+    for (std::uint32_t i = 0; i < m_CanvasData.chars.size(); i++) {
+      for (std::uint32_t j = 0; j < m_CanvasData.chars[i].size(); j++) {
+        const std::uint8_t r = m_CanvasData.colors[i][j][0];
+        const std::uint8_t g = m_CanvasData.colors[i][j][1];
+        const std::uint8_t b = m_CanvasData.colors[i][j][2];
+
+        canvas.DrawText(j * 2, i * 4, std::string(1, m_CanvasData.chars[i][j]),
+                        ftxui::Color(r, g, b));
       }
-
-      canvas.DrawText(x, y, std::string(1, c));
-
-      x += 2;
     }
   });
 
@@ -52,7 +52,7 @@ void AnimationUI::ForceUpdateCanvas() {
   std::uint32_t fps = m_pVideoToAscii->GetFramerate();
 
   while (true) {
-    m_CanvasText = m_pVideoToAscii->GetNextFrame().str();
+    m_CanvasData = m_pVideoToAscii->GetNextFrameCharsAndColors();
     m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
 
     std::this_thread::sleep_for(std::chrono::milliseconds(

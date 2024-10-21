@@ -44,7 +44,7 @@ private: // Attributes
       std::make_unique<VideoToAscii>("gif.gif");
 
   // Text that will be on canvas
-  std::string m_CanvasText;
+  VideoToAscii::CharsAndColors m_CanvasData;
 };
 
 } // namespace terminal_animation

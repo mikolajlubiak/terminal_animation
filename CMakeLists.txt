@@ -5,15 +5,9 @@ project(terminal_animations VERSION 0.2.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Sources
-file(GLOB_RECURSE SOURCES
-	src/*.cpp
-)
-
-# Headers
-file(GLOB_RECURSE HEADERS
-	src/*.hpp
-)
+# Gather source and header files
+file (GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+file (GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "src/*.hpp")
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
@@ -34,7 +28,7 @@ FetchContent_Declare(ftxui
 FetchContent_MakeAvailable(ftxui)
 
 # Add binary
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add include directories
 target_include_directories(${PROJECT_NAME} PRIVATE src PUBLIC ${OpenCV_INCLUDE_DIRS})

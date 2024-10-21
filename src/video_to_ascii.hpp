@@ -12,7 +12,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -20,6 +19,11 @@ namespace terminal_animation {
 
 class VideoToAscii {
 public:
+  struct CharsAndColors {
+    std::vector<std::vector<std::array<std::uint8_t, 3>>> colors;
+    std::vector<std::vector<char>> chars;
+  };
+
   VideoToAscii() {}
 
   // Open file
@@ -31,11 +35,17 @@ public:
   // Open file
   void OpenFile(const std::string &filename);
 
-  // Animate the video
-  std::ostringstream GetNextFrame();
+  // Loop over video and return ASCII chars and colors
+  CharsAndColors GetNextFrameCharsAndColors();
 
-  // Convert a frame to ASCII
-  std::ostringstream FrameToAscii(cv::Mat frame);
+  // Convert a frame to ASCII chars and colors
+  CharsAndColors FrameToCharsAndColors(cv::Mat frame);
+
+  // Loop over video and return ASCII chars
+  std::string GetNextFrameAscii();
+
+  // Convert a frame to ASCII chars
+  std::string FrameToAscii(cv::Mat frame);
 
   // Get framerate
   std::uint32_t GetFramerate() { return m_VideoCapture.get(cv::CAP_PROP_FPS); }
