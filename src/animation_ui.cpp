@@ -31,7 +31,7 @@ ftxui::Element AnimationUI::CreateCanvas() {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
     std::uint32_t x = 0;
     std::uint32_t y = 0;
-    for (auto c : m_pVideoToAscii->GetNextFrame().str()) {
+    for (auto c : m_CanvasText) {
       if (c == '\n') {
         y += 4;
         x = 0;
@@ -52,6 +52,7 @@ void AnimationUI::ForceUpdateCanvas() {
   std::uint32_t fps = m_pVideoToAscii->GetFramerate();
 
   while (true) {
+    m_CanvasText = m_pVideoToAscii->GetNextFrame().str();
     m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
 
     std::this_thread::sleep_for(std::chrono::milliseconds(

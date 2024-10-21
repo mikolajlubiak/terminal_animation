@@ -43,7 +43,8 @@ private: // Attributes
   std::unique_ptr<VideoToAscii> m_pVideoToAscii =
       std::make_unique<VideoToAscii>("gif.gif");
 
-  bool m_RedrawFrame = false;
+  // Text that will be on canvas
+  std::string m_CanvasText;
 };
 
 } // namespace terminal_animation
