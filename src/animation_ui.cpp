@@ -29,7 +29,7 @@ void AnimationUI::MainUI() {
       // Options
       ftxui::Maybe(GetOptionsWindow() | ftxui::align_right, &m_ShowOptions),
       // Media explorer
-      GetMediaWindow(),
+      GetMediaWindow() | ftxui::align_right,
 
       // ASCII
       m_Renderer,
@@ -136,18 +136,20 @@ ftxui::Component AnimationUI::GetMediaWindow() {
   auto file_explorer =
       Menu(&m_MediaList, &m_SelectedMedia, file_explorer_option);
 
-  auto media_window = ftxui::Window({
-      .inner = ftxui::Container::Vertical({
-                   file_explorer | ftxui::flex,
-                   ftxui::Renderer([] { return ftxui::separator(); }),
-                   ftxui::Button("Open", open_media) | ftxui::center,
-               }) |
-               ftxui::color(ftxui::Color::Cyan),
+  auto media_window =
+      ftxui::Window({
+          .inner = ftxui::Container::Vertical({
+                       file_explorer | ftxui::flex,
+                       ftxui::Renderer([] { return ftxui::separator(); }),
+                       ftxui::Button("Open", open_media) | ftxui::center,
+                   }) |
+                   ftxui::color(ftxui::Color::Cyan),
 
-      .title = "Open media",
-      .width = 25,
-      .height = static_cast<int>(m_MediaList.size()) + 6,
-  });
+          .title = "Open media",
+          .width = 25,
+          .height = static_cast<int>(m_MediaList.size()) + 6,
+      }) |
+      ftxui::vcenter;
 
   return media_window;
 }
