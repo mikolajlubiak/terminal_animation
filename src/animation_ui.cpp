@@ -63,8 +63,6 @@ ftxui::Element AnimationUI::CreateCanvas() {
 
 // Window for selecting options
 ftxui::Component AnimationUI::GetOptionsWindow() {
-  constexpr std::uint32_t max_size = 16;
-
   return ftxui::Window({
       .inner = ftxui::Container::Vertical({
           // Select ASCII art size
@@ -73,14 +71,14 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
-                        m_pVideoToAscii->SetHeight((max_size + 1 - size) * 2);
-                        m_pVideoToAscii->SetWidth(max_size + 1 - size);
+                        m_pVideoToAscii->SetHeight(size);
+                        m_pVideoToAscii->SetWidth(size * 2);
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
-                  .value = 4,
+                  .value = 32,
                   .min = 1,
-                  .max = max_size,
+                  .max = 128,
                   .increment = 1,
                   .color_active = ftxui::Color::YellowLight,
                   .color_inactive = ftxui::Color::YellowLight,

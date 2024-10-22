@@ -64,16 +64,22 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() {
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
+  if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
+    std::cerr << "[MediaToAscii::GetCharsAndColors] Error: Frame is empty."
+              << std::endl;
+    return {.colors = {}, .chars = {}}; // Return empty CharsAndColors
+  }
+
   // Calculate the block size based on user input
-  const std::uint32_t blockSizeX = m_Height;
-  const std::uint32_t blockSizeY = m_Width;
+  const std::uint32_t blockSizeX = std::max(1U, m_Frame.cols / m_Height);
+  const std::uint32_t blockSizeY = std::max(1U, m_Frame.rows / m_Width);
 
   // Calculate the number of blocks.
   const std::uint32_t numBlocksX = m_Frame.cols / blockSizeX;
   const std::uint32_t numBlocksY = m_Frame.rows / blockSizeY;
 
-  // Calculate the average luminance for the entire frame and build the output
-  // string
+  // Calculate the average colors for the entire frame and build
+  // the output string
   std::vector<std::vector<char>> chars(numBlocksX,
                                        std::vector<char>(numBlocksY));
 
@@ -104,7 +110,8 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() {
         }
       }
 
-      // Calculate R, B and B average color value of the frame region
+      // Calculate R, B and B average color value of the frame
+      // region
       colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
       colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
       colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
