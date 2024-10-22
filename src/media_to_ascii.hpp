@@ -41,6 +41,9 @@ public:
   // Get framerate
   std::uint32_t GetFramerate() { return m_VideoCapture.get(cv::CAP_PROP_FPS); }
 
+  // Get whether a video or an image is loaded
+  std::uint32_t GetIsVideo() { return m_IsVideo; }
+
   // Set blocksize
   void SetHeight(std::uint32_t height) { m_Height = height; }
   void SetWidth(std::uint32_t width) { m_Width = width; }

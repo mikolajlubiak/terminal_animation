@@ -11,6 +11,8 @@
 namespace terminal_animation {
 
 AnimationUI::AnimationUI() {
+  m_FPS = m_pVideoToAscii->GetFramerate();
+
   m_Screen.SetCursor(
       ftxui::Screen::Cursor(0, 0, ftxui::Screen::Cursor::Hidden));
 
@@ -103,6 +105,8 @@ ftxui::Component AnimationUI::GetMediaWindow() {
   // Open selected media
   auto open_media = [&] {
     m_pVideoToAscii->OpenFile(m_MediaList[m_SelectedMedia]);
+    m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
+    m_FPS = m_pVideoToAscii->GetFramerate();
   };
 
   // Menu to select media to open
@@ -132,14 +136,14 @@ ftxui::Component AnimationUI::GetMediaWindow() {
 
 // Force the update of canvas by submitting an event
 void AnimationUI::ForceUpdateCanvas() {
-  std::uint32_t fps = m_pVideoToAscii->GetFramerate();
-
   while (true) {
-    m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
-    m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
+    if (m_pVideoToAscii->GetIsVideo()) {
+      m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
+      m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
+    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(
-        1000 / fps)); // Sleep for 1s/fps to maintain the fps
+        1000 / m_FPS)); // Sleep for 1s/fps to maintain the fps
   }
 }
 

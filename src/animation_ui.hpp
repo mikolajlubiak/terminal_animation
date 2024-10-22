@@ -46,7 +46,11 @@ private: // Attributes
   // Media list
   std::vector<std::string> m_MediaList = get_file_list("media/");
 
+  // Index of the seleted media
   int m_SelectedMedia = 0;
+
+  // FPS of the currently animated media
+  std::uint32_t m_FPS;
 
   ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
 
