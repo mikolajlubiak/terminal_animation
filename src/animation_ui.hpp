@@ -1,6 +1,7 @@
 #pragma once
 
 // local
+#include "common.hpp"
 #include "video_to_ascii.hpp"
 
 // libs
@@ -31,12 +32,22 @@ private: // Methods
   ftxui::Element CreateCanvas();
 
   // Window for selecting options
-  ftxui::Component OptionsWindow();
+  ftxui::Component GetOptionsWindow();
+
+  // Open media window
+  ftxui::Component GetMediaWindow();
 
   // Force the update of canvas by submitting an event
   void ForceUpdateCanvas();
 
 private: // Attributes
+  bool m_ShowOptions = true;
+
+  // Media list
+  std::vector<std::string> m_MediaList = get_file_list("media/");
+
+  int m_SelectedMedia = 0;
+
   ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
 
   // Update static UI
@@ -44,12 +55,10 @@ private: // Attributes
 
   // Handle video to animated ASCII convertion
   std::unique_ptr<VideoToAscii> m_pVideoToAscii =
-      std::make_unique<VideoToAscii>("gif.gif");
+      std::make_unique<VideoToAscii>("media/gif.gif");
 
   // Text that will be on canvas
   VideoToAscii::CharsAndColors m_CanvasData;
-
-  bool m_ShowOptions = true;
 };
 
 } // namespace terminal_animation

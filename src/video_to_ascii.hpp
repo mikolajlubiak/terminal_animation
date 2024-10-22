@@ -45,20 +45,16 @@ public:
   std::uint32_t GetFramerate() { return m_VideoCapture.get(cv::CAP_PROP_FPS); }
 
   // Set blocksize
-  void SetBlockSizeX(std::uint32_t block_size_x) {
-    m_BlockSizeX = block_size_x;
-  }
-  void SetBlockSizeY(std::uint32_t block_size_y) {
-    m_BlockSizeY = block_size_y;
-  }
+  void SetHeight(std::uint32_t height) { m_Height = height; }
+  void SetWidth(std::uint32_t width) { m_Width = width; }
 
 private: // Attributes
   cv::VideoCapture m_VideoCapture;
 
   cv::Mat m_Frame;
 
-  std::uint32_t m_BlockSizeX = 4;
-  std::uint32_t m_BlockSizeY = 4;
+  std::uint32_t m_Height = 1;
+  std::uint32_t m_Width = 1;
 };
 
 } // namespace terminal_animation

@@ -26,9 +26,10 @@ AnimationUI::AnimationUI() {
 // Create all needed components and loop
 void AnimationUI::MainUI() {
   auto main_component = ftxui::Container::Stacked({
-      // options
-      ftxui::Maybe(std::move(OptionsWindow()) | ftxui::align_right,
-                   &m_ShowOptions),
+      // Options
+      ftxui::Maybe(GetOptionsWindow() | ftxui::align_right, &m_ShowOptions),
+      // Media explorer
+      GetMediaWindow(),
 
       // ASCII
       m_Renderer,
@@ -61,7 +62,9 @@ ftxui::Element AnimationUI::CreateCanvas() {
 }
 
 // Window for selecting options
-ftxui::Component AnimationUI::OptionsWindow() {
+ftxui::Component AnimationUI::GetOptionsWindow() {
+  constexpr std::uint32_t max_size = 16;
+
   return ftxui::Window({
       .inner = ftxui::Container::Vertical({
           // Select block size X
@@ -69,32 +72,36 @@ ftxui::Component AnimationUI::OptionsWindow() {
               ftxui::text("Height") | ftxui::color(ftxui::Color::YellowLight),
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
-                      [&](std::int32_t block_size_x) {
-                        m_pVideoToAscii->SetBlockSizeX(block_size_x);
+                      [&](std::int32_t height) {
+                        m_pVideoToAscii->SetHeight((max_size + 1 - height) * 2);
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
-                  .value = 4,
+                  .value = 1,
                   .min = 1,
-                  .max = 8,
+                  .max = max_size,
                   .increment = 1,
                   .color_active = ftxui::Color::YellowLight,
                   .color_inactive = ftxui::Color::YellowLight,
               }),
+
+          ftxui::Renderer([] {
+            return ftxui::filler();
+          }), // Make some space between components
 
           // Select block size Y
           ftxui::Slider(
               ftxui::text("Width") | ftxui::color(ftxui::Color::YellowLight),
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
-                      [&](std::int32_t block_size_y) {
-                        m_pVideoToAscii->SetBlockSizeY(block_size_y);
+                      [&](std::int32_t width) {
+                        m_pVideoToAscii->SetWidth(max_size + 1 - width);
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
-                  .value = 2,
+                  .value = 1,
                   .min = 1,
-                  .max = 8,
+                  .max = max_size,
                   .increment = 1,
                   .color_active = ftxui::Color::YellowLight,
                   .color_inactive = ftxui::Color::YellowLight,
@@ -106,13 +113,43 @@ ftxui::Component AnimationUI::OptionsWindow() {
 
           // Select/save options
           ftxui::Button("Select", [&] { m_ShowOptions = false; }) |
-              ftxui::center | ftxui::flex | ftxui::color(ftxui::Color::Yellow),
+              ftxui::center | ftxui::color(ftxui::Color::Yellow),
       }),
 
       .title = "Options",
       .width = 32,
       .height = 8,
   });
+}
+
+// Open media window
+ftxui::Component AnimationUI::GetMediaWindow() {
+  // Open selected media
+  auto open_media = [&] {
+    m_pVideoToAscii->OpenFile(m_MediaList[m_SelectedMedia]);
+  };
+
+  // Menu to select media to open
+  ftxui::MenuOption file_explorer_option;
+  file_explorer_option.on_enter = open_media;
+
+  auto file_explorer =
+      Menu(&m_MediaList, &m_SelectedMedia, file_explorer_option);
+
+  auto media_window = ftxui::Window({
+      .inner = ftxui::Container::Vertical({
+                   file_explorer | ftxui::flex,
+                   ftxui::Renderer([] { return ftxui::separator(); }),
+                   ftxui::Button("Open", open_media) | ftxui::center,
+               }) |
+               ftxui::color(ftxui::Color::Cyan),
+
+      .title = "Open media",
+      .width = 25,
+      .height = static_cast<int>(m_MediaList.size()) + 6,
+  });
+
+  return media_window;
 }
 
 // Force the update of canvas by submitting an event

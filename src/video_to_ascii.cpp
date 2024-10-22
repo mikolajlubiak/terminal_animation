@@ -38,9 +38,13 @@ VideoToAscii::CharsAndColors VideoToAscii::GetCharsAndColors() {
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
+  // Calculate the block size based on user input
+  const std::uint32_t blockSizeX = m_Height;
+  const std::uint32_t blockSizeY = m_Width;
+
   // Calculate the number of blocks.
-  const std::uint32_t numBlocksX = m_Frame.cols / m_BlockSizeX;
-  const std::uint32_t numBlocksY = m_Frame.rows / m_BlockSizeY;
+  const std::uint32_t numBlocksX = m_Frame.cols / blockSizeX;
+  const std::uint32_t numBlocksY = m_Frame.rows / blockSizeY;
 
   // Calculate the average luminance for the entire frame and build the output
   // string
@@ -58,10 +62,10 @@ VideoToAscii::CharsAndColors VideoToAscii::GetCharsAndColors() {
       std::uint32_t sum_b = 0;
 
       // Calculate the average for each block
-      for (std::uint32_t bi = 0; bi < m_BlockSizeX; ++bi) {
-        for (std::uint32_t bj = 0; bj < m_BlockSizeY; ++bj) {
-          const cv::Vec3b pixel = m_Frame.at<cv::Vec3b>(i * m_BlockSizeX + bi,
-                                                        j * m_BlockSizeY + bj);
+      for (std::uint32_t bi = 0; bi < blockSizeX; ++bi) {
+        for (std::uint32_t bj = 0; bj < blockSizeY; ++bj) {
+          const cv::Vec3b pixel =
+              m_Frame.at<cv::Vec3b>(i * blockSizeX + bi, j * blockSizeY + bj);
 
           // OpenCV has BGR color format
           const std::uint8_t b = pixel[0];
@@ -75,13 +79,13 @@ VideoToAscii::CharsAndColors VideoToAscii::GetCharsAndColors() {
       }
 
       // Calculate R, B and B average color value of the frame region
-      colors[i][j][0] = sum_r / (m_BlockSizeX * m_BlockSizeY);
-      colors[i][j][1] = sum_g / (m_BlockSizeX * m_BlockSizeY);
-      colors[i][j][2] = sum_b / (m_BlockSizeX * m_BlockSizeY);
+      colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
+      colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
+      colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
 
       // Calculate average luminance of the frame region
       const unsigned long avg =
-          (sum_r + sum_g + sum_b) / (3 * m_BlockSizeX * m_BlockSizeY);
+          (sum_r + sum_g + sum_b) / (3 * blockSizeX * blockSizeY);
 
       // Map average to char index
       const std::uint32_t density_index =

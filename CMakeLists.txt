@@ -27,6 +27,9 @@ FetchContent_Declare(ftxui
 )
 FetchContent_MakeAvailable(ftxui)
 
+# Create directory for media
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/media")
+
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES})
 
