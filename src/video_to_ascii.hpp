@@ -8,29 +8,26 @@
 #include <opencv2/opencv.hpp>
 
 // std
-#include <chrono>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <thread>
+#include <cstdint>
+#include <mutex>
 #include <vector>
 
 namespace terminal_animation {
 
-class VideoToAscii {
+class MediaToAscii {
 public:
   struct CharsAndColors {
     std::vector<std::vector<std::array<std::uint8_t, 3>>> colors;
     std::vector<std::vector<char>> chars;
   };
 
-  VideoToAscii() {}
+  MediaToAscii() = delete;
 
   // Open file
-  VideoToAscii(std::string filename) { OpenFile(filename); }
+  MediaToAscii(std::string filename) { OpenFile(filename); }
 
   // Release the video
-  ~VideoToAscii() { m_VideoCapture.release(); }
+  ~MediaToAscii() { m_VideoCapture.release(); }
 
   // Open file
   void OpenFile(const std::string &filename);
@@ -49,12 +46,21 @@ public:
   void SetWidth(std::uint32_t width) { m_Width = width; }
 
 private: // Attributes
-  cv::VideoCapture m_VideoCapture;
+  // Loaded video or image
+  bool m_IsVideo;
 
-  cv::Mat m_Frame;
-
+  // Blocksize
   std::uint32_t m_Height = 1;
   std::uint32_t m_Width = 1;
+
+  // Vidoe capture
+  cv::VideoCapture m_VideoCapture;
+
+  // Video frame or image
+  cv::Mat m_Frame;
+
+  // Mutex for thread safety
+  std::mutex m_Mutex;
 };
 
 } // namespace terminal_animation

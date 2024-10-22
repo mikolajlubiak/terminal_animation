@@ -78,7 +78,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
-                  .value = 1,
+                  .value = 4,
                   .min = 1,
                   .max = max_size,
                   .increment = 1,

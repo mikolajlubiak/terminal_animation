@@ -54,11 +54,11 @@ private: // Attributes
   ftxui::Component m_Renderer;
 
   // Handle video to animated ASCII convertion
-  std::unique_ptr<VideoToAscii> m_pVideoToAscii =
-      std::make_unique<VideoToAscii>("media/gif.gif");
+  std::unique_ptr<MediaToAscii> m_pVideoToAscii =
+      std::make_unique<MediaToAscii>("media/gif.gif");
 
   // Text that will be on canvas
-  VideoToAscii::CharsAndColors m_CanvasData;
+  MediaToAscii::CharsAndColors m_CanvasData;
 };
 
 } // namespace terminal_animation

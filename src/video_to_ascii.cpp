@@ -2,38 +2,64 @@
 #include "video_to_ascii.hpp"
 
 // std
-#include <sstream>
+#include <filesystem>
 
 namespace terminal_animation {
 
 // Open file
-void VideoToAscii::OpenFile(const std::string &filename) {
-  // Open the file
-  m_VideoCapture.open(filename);
+void MediaToAscii::OpenFile(const std::string &filename) {
+  std::lock_guard<std::mutex> lock(m_Mutex); // Lock the mutex
 
-  // If failed to open, note and return
-  if (!m_VideoCapture.isOpened()) {
-    std::cerr << "Error: Could not open video." << std::endl;
-    return;
+  // Check if the file is a video or an image
+  if (std::filesystem::path(filename).extension() == ".jpg" ||
+      std::filesystem::path(filename).extension() == ".jpeg" ||
+      std::filesystem::path(filename).extension() == ".png" ||
+      std::filesystem::path(filename).extension() == ".bmp") {
+    // Load image
+    m_Frame = cv::imread(filename);
+
+    if (m_Frame.empty()) {
+      std::cerr << "[MediaToAscii::OpenFile] Error: Could not open image. "
+                << filename << std::endl;
+      return;
+    }
+
+    m_IsVideo = false;
+  } else {
+
+    // Open the video file
+    m_VideoCapture.open(filename);
+
+    if (!m_VideoCapture.isOpened()) {
+      std::cerr << "[MediaToAscii::OpenFile] Error: Could not open video. "
+                << filename << std::endl;
+      return;
+    }
+
+    m_IsVideo = true;
   }
 }
 
 // Loop over video and return ASCII chars and colors
-VideoToAscii::CharsAndColors VideoToAscii::GetCharsAndColorsNextFrame() {
-  // Read next frame from the video
-  m_VideoCapture >> m_Frame;
+MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColorsNextFrame() {
+  std::lock_guard<std::mutex> lock(m_Mutex); // Lock the mutex
 
-  // If reached the end of the video, reset the capture
-  if (m_Frame.empty()) {
-    m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
+  if (m_IsVideo) {
+    // Read next frame from the video
     m_VideoCapture >> m_Frame;
+
+    // If reached the end of the video, reset the capture
+    if (m_Frame.empty()) {
+      m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
+      m_VideoCapture >> m_Frame;
+    }
   }
 
   return GetCharsAndColors();
 }
 
 // Convert a frame to ASCII chars and colors
-VideoToAscii::CharsAndColors VideoToAscii::GetCharsAndColors() {
+MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() {
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
