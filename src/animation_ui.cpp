@@ -67,35 +67,14 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
 
   return ftxui::Window({
       .inner = ftxui::Container::Vertical({
-          // Select block size X
+          // Select ASCII art size
           ftxui::Slider(
-              ftxui::text("Height") | ftxui::color(ftxui::Color::YellowLight),
+              ftxui::text("Size") | ftxui::color(ftxui::Color::YellowLight),
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
-                      [&](std::int32_t height) {
-                        m_pVideoToAscii->SetHeight((max_size + 1 - height) * 2);
-
-                        m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
-                      },
-                  .value = 1,
-                  .min = 1,
-                  .max = max_size,
-                  .increment = 1,
-                  .color_active = ftxui::Color::YellowLight,
-                  .color_inactive = ftxui::Color::YellowLight,
-              }),
-
-          ftxui::Renderer([] {
-            return ftxui::filler();
-          }), // Make some space between components
-
-          // Select block size Y
-          ftxui::Slider(
-              ftxui::text("Width") | ftxui::color(ftxui::Color::YellowLight),
-              ftxui::SliderWithCallbackOption<std::int32_t>{
-                  .callback =
-                      [&](std::int32_t width) {
-                        m_pVideoToAscii->SetWidth(max_size + 1 - width);
+                      [&](std::int32_t size) {
+                        m_pVideoToAscii->SetHeight((max_size + 1 - size) * 2);
+                        m_pVideoToAscii->SetWidth(max_size + 1 - size);
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
