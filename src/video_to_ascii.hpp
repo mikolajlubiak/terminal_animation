@@ -36,22 +36,29 @@ public:
   void OpenFile(const std::string &filename);
 
   // Loop over video and return ASCII chars and colors
-  CharsAndColors GetNextFrameCharsAndColors();
+  CharsAndColors GetCharsAndColorsNextFrame();
 
   // Convert a frame to ASCII chars and colors
-  CharsAndColors FrameToCharsAndColors(cv::Mat frame);
-
-  // Loop over video and return ASCII chars
-  std::string GetNextFrameAscii();
-
-  // Convert a frame to ASCII chars
-  std::string FrameToAscii(cv::Mat frame);
+  CharsAndColors GetCharsAndColors();
 
   // Get framerate
   std::uint32_t GetFramerate() { return m_VideoCapture.get(cv::CAP_PROP_FPS); }
 
+  // Set blocksize
+  void SetBlockSizeX(std::uint32_t block_size_x) {
+    m_BlockSizeX = block_size_x;
+  }
+  void SetBlockSizeY(std::uint32_t block_size_y) {
+    m_BlockSizeY = block_size_y;
+  }
+
 private: // Attributes
   cv::VideoCapture m_VideoCapture;
+
+  cv::Mat m_Frame;
+
+  std::uint32_t m_BlockSizeX = 4;
+  std::uint32_t m_BlockSizeY = 4;
 };
 
 } // namespace terminal_animation

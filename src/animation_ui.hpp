@@ -30,6 +30,9 @@ private: // Methods
   // Create static canvas with the ASCII art
   ftxui::Element CreateCanvas();
 
+  // Window for selecting options
+  ftxui::Component OptionsWindow();
+
   // Force the update of canvas by submitting an event
   void ForceUpdateCanvas();
 
@@ -45,6 +48,8 @@ private: // Attributes
 
   // Text that will be on canvas
   VideoToAscii::CharsAndColors m_CanvasData;
+
+  bool m_ShowOptions = true;
 };
 
 } // namespace terminal_animation
