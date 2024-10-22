@@ -2,7 +2,7 @@
 
 // local
 #include "common.hpp"
-#include "video_to_ascii.hpp"
+#include "media_to_ascii.hpp"
 
 // libs
 // FTXUI

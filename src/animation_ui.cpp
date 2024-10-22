@@ -2,7 +2,6 @@
 #include "animation_ui.hpp"
 
 // local
-#include "common.hpp"
 #include "slider_with_callback.hpp"
 
 // std

@@ -1,5 +1,5 @@
 // header
-#include "video_to_ascii.hpp"
+#include "media_to_ascii.hpp"
 
 // std
 #include <filesystem>
@@ -65,7 +65,7 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() {
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
   if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
-    std::cerr << "[MediaToAscii::GetCharsAndColors] Error: Frame is empty."
+    std::cerr << "[MediaToAscii::GetCharsAndColors] Warning: Frame is empty."
               << std::endl;
     return {.colors = {}, .chars = {}}; // Return empty CharsAndColors
   }
