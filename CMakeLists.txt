@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(terminal_animations VERSION 1.0.0 LANGUAGES C CXX)
+project(terminal_animations VERSION 2.0.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -26,9 +26,6 @@ FetchContent_Declare(ftxui
 	EXCLUDE_FROM_ALL
 )
 FetchContent_MakeAvailable(ftxui)
-
-# Create directory for media
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/media")
 
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES})
