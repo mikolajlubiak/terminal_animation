@@ -24,7 +24,7 @@ public:
   MediaToAscii() = delete;
 
   // Open file
-  MediaToAscii(std::string filename) { OpenFile(filename); }
+  MediaToAscii(const std::string &filename) { OpenFile(filename); }
 
   // Release the video
   ~MediaToAscii() { m_VideoCapture.release(); }
@@ -36,13 +36,15 @@ public:
   CharsAndColors GetCharsAndColorsNextFrame();
 
   // Convert a frame to ASCII chars and colors
-  CharsAndColors GetCharsAndColors();
+  CharsAndColors GetCharsAndColors() const;
 
   // Get framerate
-  std::uint32_t GetFramerate() { return m_VideoCapture.get(cv::CAP_PROP_FPS); }
+  std::uint32_t GetFramerate() const {
+    return m_VideoCapture.get(cv::CAP_PROP_FPS);
+  }
 
   // Get whether a video or an image is loaded
-  std::uint32_t GetIsVideo() { return m_IsVideo; }
+  std::uint32_t GetIsVideo() const { return m_IsVideo; }
 
   // Set blocksize
   void SetHeight(std::uint32_t height) { m_Height = height; }

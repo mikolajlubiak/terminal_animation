@@ -26,10 +26,10 @@ private: // Methods
   void MainUI();
 
   // Update static UI
-  ftxui::Component CreateRenderer();
+  ftxui::Component CreateRenderer() const;
 
   // Create static canvas with the ASCII art
-  ftxui::Element CreateCanvas();
+  ftxui::Element CreateCanvas() const;
 
   // Window for selecting options
   ftxui::Component GetOptionsWindow();

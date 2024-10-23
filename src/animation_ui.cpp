@@ -40,12 +40,12 @@ void AnimationUI::MainUI() {
 }
 
 // Create static canvas with the ASCII art
-ftxui::Component AnimationUI::CreateRenderer() {
+ftxui::Component AnimationUI::CreateRenderer() const {
   return ftxui::Renderer([this] { return CreateCanvas(); });
 }
 
 // Create static canvas with the ASCII art
-ftxui::Element AnimationUI::CreateCanvas() {
+ftxui::Element AnimationUI::CreateCanvas() const {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
     for (std::uint32_t i = 0; i < m_CanvasData.chars.size(); i++) {
       for (std::uint32_t j = 0; j < m_CanvasData.chars[i].size(); j++) {

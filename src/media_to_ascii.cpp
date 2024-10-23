@@ -59,7 +59,7 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColorsNextFrame() {
 }
 
 // Convert a frame to ASCII chars and colors
-MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() {
+MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
