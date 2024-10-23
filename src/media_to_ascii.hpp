@@ -21,7 +21,7 @@ public:
     std::vector<std::vector<char>> chars;
   };
 
-  MediaToAscii() = delete;
+  MediaToAscii() = default;
 
   // Open file
   MediaToAscii(const std::string &filename) { OpenFile(filename); }
@@ -40,7 +40,9 @@ public:
 
   // Get framerate
   std::uint32_t GetFramerate() const {
-    return m_VideoCapture.get(cv::CAP_PROP_FPS);
+    // Return framerate or 1 for images
+    return std::max(
+        1U, static_cast<std::uint32_t>(m_VideoCapture.get(cv::CAP_PROP_FPS)));
   }
 
   // Get whether a video or an image is loaded
@@ -52,20 +54,23 @@ public:
 
 private: // Attributes
   // Loaded video or image
-  bool m_IsVideo;
+  bool m_IsVideo = false;
+
+  // Has class loaded any file
+  bool m_FileLoaded = false;
 
   // Blocksize
   std::uint32_t m_Height = 1;
   std::uint32_t m_Width = 1;
 
   // Vidoe capture
-  cv::VideoCapture m_VideoCapture;
+  cv::VideoCapture m_VideoCapture{};
 
   // Video frame or image
-  cv::Mat m_Frame;
+  cv::Mat m_Frame{};
 
   // Mutex for thread safety
-  std::mutex m_Mutex;
+  std::mutex m_Mutex{};
 };
 
 } // namespace terminal_animation

@@ -11,8 +11,6 @@
 namespace terminal_animation {
 
 AnimationUI::AnimationUI() {
-  m_FPS = m_pVideoToAscii->GetFramerate();
-
   m_Screen.SetCursor(
       ftxui::Screen::Cursor(0, 0, ftxui::Screen::Cursor::Hidden));
 
@@ -29,8 +27,8 @@ void AnimationUI::MainUI() {
   auto main_component = ftxui::Container::Stacked({
       // Options
       ftxui::Maybe(GetOptionsWindow() | ftxui::align_right, &m_ShowOptions),
-      // Media explorer
-      GetMediaWindow() | ftxui::align_right,
+      // File explorer
+      GetFileExplorer() | ftxui::align_right | ftxui::vcenter,
 
       // ASCII
       m_Renderer,
@@ -53,7 +51,7 @@ ftxui::Element AnimationUI::CreateCanvas() const {
         const std::uint8_t g = m_CanvasData.colors[i][j][1];
         const std::uint8_t b = m_CanvasData.colors[i][j][2];
 
-        canvas.DrawText(j * 2, i * 4, std::string(1, m_CanvasData.chars[i][j]),
+        canvas.DrawText(i * 2, j * 4, std::string(1, m_CanvasData.chars[i][j]),
                         ftxui::Color(r, g, b));
       }
     }
@@ -72,8 +70,8 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
-                        m_pVideoToAscii->SetHeight(size);
-                        m_pVideoToAscii->SetWidth(size * 2);
+                        m_pVideoToAscii->SetHeight(size * 2);
+                        m_pVideoToAscii->SetWidth(size);
 
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
@@ -100,38 +98,72 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
   });
 }
 
-// Open media window
-ftxui::Component AnimationUI::GetMediaWindow() {
-  // Open selected media
-  auto open_media = [&] {
-    m_pVideoToAscii->OpenFile(m_MediaList[m_SelectedMedia]);
-    m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
-    m_FPS = m_pVideoToAscii->GetFramerate();
+ftxui::Component AnimationUI::GetFileExplorer() {
+  // Go to the directory or load selected file
+  auto explorer_on_select = [&] {
+    // If selected content is directory
+    if (std::filesystem::is_directory(
+            m_CurrentDirContents[m_SelectedContentIndex])) {
+
+      // Update current directory
+      if (m_SelectedContentIndex ==
+          0) { // If selected to go to the parent directory
+        if (m_CurrentDir.has_parent_path()) { // If has parent directory
+          m_CurrentDir =
+              m_CurrentDir.parent_path(); // Go to parent directory/go up
+        }
+      } else {
+        m_CurrentDir =
+            m_CurrentDirContents[m_SelectedContentIndex]; // Go to
+                                                          // selected
+                                                          // directory
+      }
+
+      // Update directory contents
+      m_CurrentDirContents = GetDirContents(m_CurrentDir);
+
+      // Update printable contents
+      m_PrintableCurrentDirContents = PrintableContents(m_CurrentDirContents);
+
+      // Resize the window if contents is larger
+      m_ExplorerWindowHeight =
+          std::max(m_ExplorerWindowHeight,
+                   static_cast<int>(m_CurrentDirContents.size()) + 6);
+
+    } else { // If is file
+      // Open the file
+      m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex]);
+
+      // Update canvas data
+      m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
+
+      // Update FPS
+      m_FPS = m_pVideoToAscii->GetFramerate();
+    }
   };
 
-  // Menu to select media to open
-  ftxui::MenuOption file_explorer_option;
-  file_explorer_option.on_enter = open_media;
+  // Menu to explore the filesystem
+  ftxui::MenuOption explorer_menu_options;
+  explorer_menu_options.on_enter = explorer_on_select;
 
-  auto file_explorer =
-      Menu(&m_MediaList, &m_SelectedMedia, file_explorer_option);
+  auto explorer_menu = Menu(&m_PrintableCurrentDirContents,
+                            &m_SelectedContentIndex, explorer_menu_options);
 
-  auto media_window =
-      ftxui::Window({
-          .inner = ftxui::Container::Vertical({
-                       file_explorer | ftxui::flex,
-                       ftxui::Renderer([] { return ftxui::separator(); }),
-                       ftxui::Button("Open", open_media) | ftxui::center,
-                   }) |
-                   ftxui::color(ftxui::Color::Cyan),
+  // Window for the menu
+  auto explorer_window = ftxui::Window({
+      .inner = ftxui::Container::Vertical({
+                   explorer_menu | ftxui::flex,
+                   ftxui::Renderer([] { return ftxui::separator(); }),
+                   ftxui::Button("Open", explorer_on_select) | ftxui::center,
+               }) |
+               ftxui::color(ftxui::Color::Cyan),
 
-          .title = "Open media",
-          .width = 25,
-          .height = static_cast<int>(m_MediaList.size()) + 6,
-      }) |
-      ftxui::vcenter;
+      .title = "Explore",
+      .width = 30,
+      .height = &m_ExplorerWindowHeight,
+  });
 
-  return media_window;
+  return explorer_window;
 }
 
 // Force the update of canvas by submitting an event
@@ -145,6 +177,65 @@ void AnimationUI::ForceUpdateCanvas() {
     std::this_thread::sleep_for(std::chrono::milliseconds(
         1000 / m_FPS)); // Sleep for 1s/fps to maintain the fps
   }
+}
+
+// Return path directory contents
+std::vector<std::filesystem::path>
+AnimationUI::GetDirContents(const std::filesystem::path &path) const {
+  std::vector<std::filesystem::path> contents;
+
+  if (!std::filesystem::is_directory(path) || !std::filesystem::exists(path)) {
+    return {};
+  }
+
+  contents.push_back("..");
+  contents.push_back(HomeDirPath(""));
+  contents.push_back(HomeDirPath("Pictures"));
+
+  for (const auto &entry : std::filesystem::directory_iterator(path)) {
+    contents.push_back(entry.path());
+  }
+
+  return contents;
+}
+
+// Directory contents in printable form
+std::vector<std::string> AnimationUI::PrintableContents(
+    const std::vector<std::filesystem::path> &contents) const {
+  std::vector<std::string> printable_contents;
+
+  for (const auto &entry : contents) {
+    if (std::filesystem::is_directory(entry)) {
+      printable_contents.push_back("[DIR] " + entry.filename().string());
+    } else {
+      printable_contents.push_back("[FILE] " + entry.filename().string());
+    }
+  }
+
+  return printable_contents;
+}
+
+std::filesystem::path
+AnimationUI::HomeDirPath(const std::string &dir_name) const {
+  std::filesystem::path path;
+
+  // Determine the user's home directory
+  const char *homeDir = std::getenv("HOME");
+  if (!homeDir) {
+    homeDir = std::getenv("USERPROFILE"); // For Windows
+  }
+
+  if (homeDir) {
+    if (dir_name != "") {
+      path = std::filesystem::path(homeDir) / dir_name;
+    } else {
+      path = std::filesystem::path(homeDir);
+    }
+    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+    }
+  }
+
+  return path;
 }
 
 } // namespace terminal_animation

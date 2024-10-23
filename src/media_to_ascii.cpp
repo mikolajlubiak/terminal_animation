@@ -38,11 +38,17 @@ void MediaToAscii::OpenFile(const std::string &filename) {
 
     m_IsVideo = true;
   }
+
+  m_FileLoaded = true;
 }
 
 // Loop over video and return ASCII chars and colors
 MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColorsNextFrame() {
   std::lock_guard<std::mutex> lock(m_Mutex); // Lock the mutex
+
+  if (!m_FileLoaded) {
+    return {.colors = {}, .chars = {}}; // Return empty CharsAndColors
+  }
 
   if (m_IsVideo) {
     // Read next frame from the video
@@ -97,7 +103,7 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
       for (std::uint32_t bi = 0; bi < blockSizeX; ++bi) {
         for (std::uint32_t bj = 0; bj < blockSizeY; ++bj) {
           const cv::Vec3b pixel =
-              m_Frame.at<cv::Vec3b>(i * blockSizeX + bi, j * blockSizeY + bj);
+              m_Frame.at<cv::Vec3b>(j * blockSizeY + bj, i * blockSizeX + bi);
 
           // OpenCV has BGR color format
           const std::uint8_t b = pixel[0];

@@ -13,6 +13,7 @@
 #include <ftxui/screen/screen.hpp>
 
 // std
+#include <filesystem>
 #include <memory>
 
 namespace terminal_animation {
@@ -34,35 +35,57 @@ private: // Methods
   // Window for selecting options
   ftxui::Component GetOptionsWindow();
 
-  // Open media window
-  ftxui::Component GetMediaWindow();
+  // File explorer window
+  ftxui::Component GetFileExplorer();
 
   // Force the update of canvas by submitting an event
   void ForceUpdateCanvas();
 
+  // Return path directory contents
+  std::vector<std::filesystem::path>
+  GetDirContents(const std::filesystem::path &path) const;
+
+  // Directory contents in printable form
+  std::vector<std::string>
+  PrintableContents(const std::vector<std::filesystem::path> &contents) const;
+
+  std::filesystem::path HomeDirPath(const std::string &dir_name) const;
+
 private: // Attributes
   bool m_ShowOptions = true;
 
-  // Media list
-  std::vector<std::string> m_MediaList = get_file_list("media/");
-
-  // Index of the seleted media
-  int m_SelectedMedia = 0;
-
   // FPS of the currently animated media
-  std::uint32_t m_FPS;
+  std::uint32_t m_FPS = 1;
 
   ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
 
   // Update static UI
-  ftxui::Component m_Renderer;
+  ftxui::Component m_Renderer{};
 
   // Handle video to animated ASCII convertion
   std::unique_ptr<MediaToAscii> m_pVideoToAscii =
-      std::make_unique<MediaToAscii>("media/gif.gif");
+      std::make_unique<MediaToAscii>();
 
   // Text that will be on canvas
-  MediaToAscii::CharsAndColors m_CanvasData;
+  MediaToAscii::CharsAndColors m_CanvasData{};
+
+  // Current directory
+  std::filesystem::path m_CurrentDir = std::filesystem::current_path();
+
+  // List with files in the currently explored directory
+  std::vector<std::filesystem::path> m_CurrentDirContents =
+      GetDirContents(m_CurrentDir);
+
+  // List with files in the currently explored directory
+  std::vector<std::string> m_PrintableCurrentDirContents =
+      PrintableContents(m_CurrentDirContents);
+
+  // Index of the currently selected file/directory in explorer
+  int m_SelectedContentIndex = 0;
+
+  // Explorer window height
+  int m_ExplorerWindowHeight =
+      static_cast<int>(m_CurrentDirContents.size()) + 6;
 };
 
 } // namespace terminal_animation
