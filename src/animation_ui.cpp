@@ -15,15 +15,13 @@ AnimationUI::AnimationUI() {
       ftxui::Screen::Cursor(0, 0, ftxui::Screen::Cursor::Hidden));
 
   m_Renderer = CreateRenderer();
-
-  auto canvas_updater_handle =
-      std::async(std::launch::async, [this] { ForceUpdateCanvas(); });
-
-  MainUI();
 }
 
 // Create all needed components and loop
 void AnimationUI::MainUI() {
+  auto canvas_updater_handle =
+      std::async(std::launch::async, [this] { ForceUpdateCanvas(); });
+
   auto main_component = ftxui::Container::Stacked({
       // Options
       ftxui::Maybe(GetOptionsWindow() | ftxui::align_right, &m_ShowOptions),

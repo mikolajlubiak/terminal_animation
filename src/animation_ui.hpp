@@ -22,10 +22,10 @@ class AnimationUI {
 public:
   AnimationUI();
 
-private: // Methods
   // Create all needed components and loop
   void MainUI();
 
+private: // Methods
   // Update static UI
   ftxui::Component CreateRenderer() const;
 
