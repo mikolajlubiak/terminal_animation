@@ -12,8 +12,8 @@ namespace terminal_animation {
 
 AnimationUI::AnimationUI() {
   // Hide cursor
-  m_Screen.SetCursor(
-      ftxui::Screen::Cursor(0, 0, ftxui::Screen::Cursor::Hidden));
+  m_Screen.SetCursor(ftxui::Screen::Cursor{
+      .x = 0, .y = 0, .shape = ftxui::Screen::Cursor::Hidden});
 }
 
 // Create all needed components and loop
