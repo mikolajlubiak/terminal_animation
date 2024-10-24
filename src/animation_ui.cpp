@@ -11,10 +11,9 @@
 namespace terminal_animation {
 
 AnimationUI::AnimationUI() {
+  // Hide cursor
   m_Screen.SetCursor(
       ftxui::Screen::Cursor(0, 0, ftxui::Screen::Cursor::Hidden));
-
-  m_Renderer = CreateRenderer();
 }
 
 // Create all needed components and loop
@@ -29,7 +28,7 @@ void AnimationUI::MainUI() {
       GetFileExplorer() | ftxui::align_right | ftxui::vcenter,
 
       // ASCII
-      m_Renderer,
+      CreateRenderer(),
   });
 
   m_Screen.Loop(main_component);

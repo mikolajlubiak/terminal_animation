@@ -20,6 +20,7 @@ namespace terminal_animation {
 
 class AnimationUI {
 public:
+  // Default con
   AnimationUI();
 
   // Create all needed components and loop
@@ -58,9 +59,6 @@ private: // Attributes
   std::uint32_t m_FPS = 1;
 
   ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
-
-  // Update static UI
-  ftxui::Component m_Renderer{};
 
   // Handle video to animated ASCII convertion
   std::unique_ptr<MediaToAscii> m_pVideoToAscii =
