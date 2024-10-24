@@ -9,23 +9,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 file (GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file (GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "src/*.hpp")
 
-# Find OpenCV
-find_package(OpenCV REQUIRED)
-
-# Get FTXUI
 include(FetchContent)
-
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 set(FETCHCONTENT_QUIET OFF)
 
-FetchContent_Declare(ftxui
-	GIT_REPOSITORY https://github.com/arthursonzogni/ftxui.git
-	GIT_TAG        v5.0.0
-	GIT_PROGRESS   TRUE
-	GIT_SHALLOW    TRUE
-	EXCLUDE_FROM_ALL
-)
-FetchContent_MakeAvailable(ftxui)
+# Check if OpenCV is installed
+find_package(OpenCV REQUIRED)
+
+# Check if FTXUI is already installed
+find_package(ftxui QUIET)
+
+if(NOT ftxui_FOUND)
+    # Get FTXUI
+    FetchContent_Declare(ftxui
+        GIT_REPOSITORY https://github.com/arthursonzogni/ftxui.git
+        GIT_TAG        v5.0.0
+        GIT_PROGRESS   TRUE
+        GIT_SHALLOW    TRUE
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(ftxui)
+endif()
 
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES})
