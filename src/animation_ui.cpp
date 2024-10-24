@@ -130,7 +130,7 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 
     } else { // If is file
       // Open the file
-      m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex]);
+      m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex].string());
 
       // Update canvas data
       m_pVideoToAscii->RenderNextFrame();

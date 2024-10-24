@@ -137,7 +137,7 @@ void MediaToAscii::CalculateCharsAndColors() {
 
       // Map average to char index
       const std::uint32_t density_index =
-          mapValue(avg, 0UL, 255UL, 0UL, strlen(density) - 1);
+          mapValue(avg, 0UL, 255UL, 0UL, static_cast<unsigned long>(strlen(density) - 1));
 
       m_CharsAndColors.chars[i][j] = density[density_index];
     }
