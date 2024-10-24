@@ -16,20 +16,15 @@ set(FETCHCONTENT_QUIET OFF)
 # Check if OpenCV is installed
 find_package(OpenCV REQUIRED)
 
-# Check if FTXUI is already installed
-find_package(ftxui QUIET)
-
-if(NOT ftxui_FOUND)
-    # Get FTXUI
-    FetchContent_Declare(ftxui
-        GIT_REPOSITORY https://github.com/arthursonzogni/ftxui.git
-        GIT_TAG        v5.0.0
-        GIT_PROGRESS   TRUE
-        GIT_SHALLOW    TRUE
-        EXCLUDE_FROM_ALL
-    )
-    FetchContent_MakeAvailable(ftxui)
-endif()
+# Get FTXUI
+FetchContent_Declare(ftxui
+	GIT_REPOSITORY https://github.com/arthursonzogni/ftxui.git
+	GIT_TAG        v5.0.0
+	GIT_PROGRESS   TRUE
+	GIT_SHALLOW    TRUE
+	EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(ftxui)
 
 # Add binary
 add_executable(${PROJECT_NAME} ${SOURCES})
