@@ -70,6 +70,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                         m_pVideoToAscii->SetHeight(size * 2);
                         m_pVideoToAscii->SetWidth(size);
 
+                        m_pVideoToAscii->CalculateCharsAndColors();
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
                       },
                   .value = 32,
@@ -132,7 +133,8 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex]);
 
       // Update canvas data
-      m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
+      m_pVideoToAscii->RenderNextFrame();
+      m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
 
       // Update FPS
       m_FPS = m_pVideoToAscii->GetFramerate();
@@ -167,7 +169,8 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 void AnimationUI::ForceUpdateCanvas() {
   while (true) {
     if (m_pVideoToAscii->GetIsVideo()) {
-      m_CanvasData = m_pVideoToAscii->GetCharsAndColorsNextFrame();
+      m_pVideoToAscii->RenderNextFrame();
+      m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
     }
 

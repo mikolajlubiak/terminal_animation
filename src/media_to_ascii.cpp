@@ -8,7 +8,9 @@ namespace terminal_animation {
 
 // Open file
 void MediaToAscii::OpenFile(const std::string &filename) {
-  std::lock_guard<std::mutex> lock(m_Mutex); // Lock the mutex
+  // Make sure that the code doesn't try to access next frame and open a
+  // different video
+  std::lock_guard<std::mutex> lock(m_MutexVideo);
 
   // Check if the file is a video or an image
   if (std::filesystem::path(filename).extension() == ".jpg" ||
@@ -43,11 +45,13 @@ void MediaToAscii::OpenFile(const std::string &filename) {
 }
 
 // Loop over video and return ASCII chars and colors
-MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColorsNextFrame() {
-  std::lock_guard<std::mutex> lock(m_Mutex); // Lock the mutex
+void MediaToAscii::RenderNextFrame() {
+  // Make sure that the code doesn't try to access next frame and open a
+  // different video
+  std::lock_guard<std::mutex> lock(m_MutexVideo);
 
   if (!m_FileLoaded) {
-    return {.colors = {}, .chars = {}}; // Return empty CharsAndColors
+    return; // Return empty CharsAndColors
   }
 
   if (m_IsVideo) {
@@ -61,19 +65,23 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColorsNextFrame() {
     }
   }
 
-  return GetCharsAndColors();
+  CalculateCharsAndColors();
 }
 
 // Convert a frame to ASCII chars and colors
-MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
+void MediaToAscii::CalculateCharsAndColors() {
+  // Make sure that no two threads try to change the chars and colors data
+  std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
+
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
   if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
-    std::cerr << "[MediaToAscii::GetCharsAndColors] Warning: Frame is empty."
-              << std::endl;
-    return {.colors = {}, .chars = {}}; // Return empty CharsAndColors
+    std::cerr
+        << "[MediaToAscii::CalculateCharsAndColors] Warning: Frame is empty."
+        << std::endl;
+    return;
   }
 
   // Calculate the block size based on user input
@@ -86,10 +94,11 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
 
   // Calculate the average colors for the entire frame and build
   // the output string
-  std::vector<std::vector<char>> chars(numBlocksX,
-                                       std::vector<char>(numBlocksY));
+  m_CharsAndColors.chars.clear();
+  m_CharsAndColors.chars.resize(numBlocksX, std::vector<char>(numBlocksY));
 
-  std::vector<std::vector<std::array<std::uint8_t, 3>>> colors(
+  m_CharsAndColors.colors.clear();
+  m_CharsAndColors.colors.resize(
       numBlocksX, std::vector<std::array<std::uint8_t, 3>>(
                       numBlocksY, std::array<std::uint8_t, 3>()));
 
@@ -118,9 +127,9 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
 
       // Calculate R, B and B average color value of the frame
       // region
-      colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
-      colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
-      colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
+      m_CharsAndColors.colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
+      m_CharsAndColors.colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
+      m_CharsAndColors.colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
 
       // Calculate average luminance of the frame region
       const unsigned long avg =
@@ -130,11 +139,9 @@ MediaToAscii::CharsAndColors MediaToAscii::GetCharsAndColors() const {
       const std::uint32_t density_index =
           mapValue(avg, 0UL, 255UL, 0UL, strlen(density) - 1);
 
-      chars[i][j] = density[density_index];
+      m_CharsAndColors.chars[i][j] = density[density_index];
     }
   }
-
-  return {.colors = colors, .chars = chars};
 }
 
 } // namespace terminal_animation

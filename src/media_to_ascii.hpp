@@ -33,10 +33,12 @@ public:
   void OpenFile(const std::string &filename);
 
   // Loop over video and return ASCII chars and colors
-  CharsAndColors GetCharsAndColorsNextFrame();
+  void RenderNextFrame();
 
   // Convert a frame to ASCII chars and colors
-  CharsAndColors GetCharsAndColors() const;
+  void CalculateCharsAndColors();
+
+  CharsAndColors GetCharsAndColors() { return m_CharsAndColors; }
 
   // Get framerate
   std::uint32_t GetFramerate() const {
@@ -46,7 +48,7 @@ public:
   }
 
   // Get whether a video or an image is loaded
-  std::uint32_t GetIsVideo() const { return m_IsVideo; }
+  bool GetIsVideo() const { return m_IsVideo; }
 
   // Set blocksize
   void SetHeight(std::uint32_t height) { m_Height = height; }
@@ -69,8 +71,15 @@ private: // Attributes
   // Video frame or image
   cv::Mat m_Frame{};
 
-  // Mutex for thread safety
-  std::mutex m_Mutex{};
+  // Make sure that the code doesn't try to access next frame and open a
+  // different video
+  std::mutex m_MutexVideo{};
+
+  // Make sure that no two threads try to change the chars and colors data
+  std::mutex m_MutexCharsAndColors{};
+
+  // Vector with the characters
+  CharsAndColors m_CharsAndColors{};
 };
 
 } // namespace terminal_animation
