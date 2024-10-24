@@ -5,6 +5,7 @@
 #include "slider_with_callback.hpp"
 
 // std
+#include <cstdlib>
 #include <future>
 #include <memory>
 
@@ -81,6 +82,13 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                   .color_inactive = ftxui::Color::YellowLight,
               }),
 
+          ftxui::Renderer([] {
+            return ftxui::filler();
+          }), // Make some space between components
+
+          ftxui::Checkbox("Beep (not recommended)", &m_Beep) | ftxui::center |
+              ftxui::color(ftxui::Color::Yellow),
+
           ftxui::Renderer(
               [] { return ftxui::separator(); }), // Separate select button from
                                                   // options
@@ -130,7 +138,8 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 
     } else { // If is file
       // Open the file
-      m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex].string());
+      m_pVideoToAscii->OpenFile(
+          m_CurrentDirContents[m_SelectedContentIndex].string());
 
       // Update canvas data
       m_pVideoToAscii->RenderNextFrame();
@@ -169,6 +178,12 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 void AnimationUI::ForceUpdateCanvas() {
   while (true) {
     if (m_pVideoToAscii->GetIsVideo()) {
+      if (m_Beep) {
+#ifdef linux
+        std::system("beep");
+#endif
+      }
+
       m_pVideoToAscii->RenderNextFrame();
       m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event

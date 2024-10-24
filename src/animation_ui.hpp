@@ -55,6 +55,8 @@ private: // Methods
 private: // Attributes
   bool m_ShowOptions = true;
 
+  bool m_Beep = false;
+
   // FPS of the currently animated media
   std::uint32_t m_FPS = 1;
 
