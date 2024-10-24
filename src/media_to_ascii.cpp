@@ -3,6 +3,7 @@
 
 // std
 #include <filesystem>
+#include <fstream>
 
 namespace terminal_animation {
 
@@ -21,8 +22,14 @@ void MediaToAscii::OpenFile(const std::string &filename) {
     m_Frame = cv::imread(filename);
 
     if (m_Frame.empty()) {
-      std::cerr << "[MediaToAscii::OpenFile] Error: Could not open image. "
-                << filename << std::endl;
+      std::ofstream debug_stream("debug_output.txt",
+                                 std::ios::app); // Debug output stream
+
+      debug_stream << "[MediaToAscii::OpenFile] Error: Could not open image. "
+                   << filename << std::endl;
+
+      debug_stream.close();
+
       return;
     }
 
@@ -33,8 +40,14 @@ void MediaToAscii::OpenFile(const std::string &filename) {
     m_VideoCapture.open(filename);
 
     if (!m_VideoCapture.isOpened()) {
-      std::cerr << "[MediaToAscii::OpenFile] Error: Could not open video. "
-                << filename << std::endl;
+      std::ofstream debug_stream("debug_output.txt",
+                                 std::ios::app); // Debug output stream
+
+      debug_stream << "[MediaToAscii::OpenFile] Error: Could not open video. "
+                   << filename << std::endl;
+
+      debug_stream.close();
+
       return;
     }
 
@@ -78,9 +91,15 @@ void MediaToAscii::CalculateCharsAndColors() {
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
   if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
-    std::cerr
+    std::ofstream debug_stream("debug_output.txt",
+                               std::ios::app); // Debug output stream
+
+    debug_stream
         << "[MediaToAscii::CalculateCharsAndColors] Warning: Frame is empty."
         << std::endl;
+
+    debug_stream.close();
+
     return;
   }
 
@@ -137,7 +156,8 @@ void MediaToAscii::CalculateCharsAndColors() {
 
       // Map average to char index
       const std::uint32_t density_index =
-          mapValue(avg, 0UL, 255UL, 0UL, static_cast<unsigned long>(strlen(density) - 1));
+          mapValue(avg, 0UL, 255UL, 0UL,
+                   static_cast<unsigned long>(strlen(density) - 1));
 
       m_CharsAndColors.chars[i][j] = density[density_index];
     }
