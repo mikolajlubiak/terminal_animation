@@ -123,14 +123,14 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       // Update printable contents
       m_PrintableCurrentDirContents = PrintableContents(m_CurrentDirContents);
 
-      // Resize the window if contents is larger
+      // Resize the window
       m_ExplorerWindowHeight =
-          std::max(m_ExplorerWindowHeight,
-                   static_cast<int>(m_CurrentDirContents.size()) + 6);
+          static_cast<int>(m_CurrentDirContents.size()) + 6;
 
     } else { // If is file
       // Open the file
-      m_pVideoToAscii->OpenFile(m_CurrentDirContents[m_SelectedContentIndex].string());
+      m_pVideoToAscii->OpenFile(
+          m_CurrentDirContents[m_SelectedContentIndex].string());
 
       // Update canvas data
       m_pVideoToAscii->RenderNextFrame();
