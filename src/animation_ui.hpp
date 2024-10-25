@@ -71,19 +71,16 @@ private: // Attributes
   std::filesystem::path m_CurrentDir = std::filesystem::current_path();
 
   // List with files in the currently explored directory
-  std::vector<std::filesystem::path> m_CurrentDirContents =
-      GetDirContents(m_CurrentDir);
+  std::vector<std::filesystem::path> m_CurrentDirContents;
 
   // List with files in the currently explored directory
-  std::vector<std::string> m_PrintableCurrentDirContents =
-      PrintableContents(m_CurrentDirContents);
+  std::vector<std::string> m_PrintableCurrentDirContents;
 
   // Index of the currently selected file/directory in explorer
   int m_SelectedContentIndex = 0;
 
   // Explorer window height
-  int m_ExplorerWindowHeight =
-      static_cast<int>(m_CurrentDirContents.size()) + 6;
+  int m_ExplorerWindowHeight;
 };
 
 } // namespace terminal_animation

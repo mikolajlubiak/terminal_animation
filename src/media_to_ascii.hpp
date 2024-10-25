@@ -24,13 +24,13 @@ public:
   MediaToAscii() = default;
 
   // Open file
-  MediaToAscii(const std::string &filename) { OpenFile(filename); }
+  MediaToAscii(const std::filesystem::path &file) { OpenFile(file); }
 
   // Release the video
   ~MediaToAscii() { m_VideoCapture.release(); }
 
   // Open file
-  void OpenFile(const std::string &filename);
+  void OpenFile(const std::filesystem::path &file);
 
   // Loop over video and return ASCII chars and colors
   void RenderNextFrame();
@@ -49,6 +49,11 @@ public:
 
   // Get whether a video or an image is loaded
   bool GetIsVideo() const { return m_IsVideo; }
+
+  bool IsImage(const std::filesystem::path &filename) const {
+    return filename.extension() == ".jpg" || filename.extension() == ".jpeg" ||
+           filename.extension() == ".png" || filename.extension() == ".bmp";
+  }
 
   // Set blocksize
   void SetHeight(std::uint32_t height) { m_Height = height; }

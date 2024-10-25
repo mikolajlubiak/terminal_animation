@@ -2,6 +2,7 @@
 
 // std
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -15,4 +16,5 @@ std::uint32_t rgbToInt(std::uint8_t r, std::uint8_t g, std::uint8_t b);
 void intToRgb(std::uint32_t colorInt, std::uint8_t &r, std::uint8_t &g,
               std::uint8_t &b);
 
-std::vector<std::string> get_file_list(const std::string &directory);
+std::vector<std::filesystem::path>
+get_file_list(const std::filesystem::path &directory);

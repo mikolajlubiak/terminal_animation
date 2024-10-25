@@ -5,12 +5,19 @@
 #include "slider_with_callback.hpp"
 
 // std
+#include <fstream>
 #include <future>
 #include <memory>
 
 namespace terminal_animation {
 
 AnimationUI::AnimationUI() {
+  m_CurrentDirContents = GetDirContents(m_CurrentDir);
+
+  m_PrintableCurrentDirContents = PrintableContents(m_CurrentDirContents);
+
+  m_ExplorerWindowHeight = static_cast<int>(m_CurrentDirContents.size()) + 6;
+
   // Hide cursor
   m_Screen.SetCursor(ftxui::Screen::Cursor{
       .x = 0, .y = 0, .shape = ftxui::Screen::Cursor::Hidden});
@@ -220,10 +227,13 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
   std::filesystem::path path;
 
   // Determine the user's home directory
+#ifdef linux
   const char *homeDir = std::getenv("HOME");
-  if (!homeDir) {
-    homeDir = std::getenv("USERPROFILE"); // For Windows
-  }
+#elifdef _WIN32
+  const char *homeDir = std::getenv("USERPROFILE"); // For Windows
+#else
+#error shucks!
+#endif
 
   if (homeDir) {
     if (dir_name != "") {
@@ -232,10 +242,21 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
       path = std::filesystem::path(homeDir);
     }
     if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+      return path;
+    } else {
+      std::ofstream debug_stream("debug_output.txt",
+                                 std::ios::app); // Debug output stream
+
+      debug_stream
+          << "[AnimationUI::HomeDirPath] Error: Given directory doesn't exist. "
+          << path << std::endl;
+
+      debug_stream.close();
     }
   }
 
-  return path;
+  // If there directory doesn't exist, fallback to current working directory.
+  return std::filesystem::current_path();
 }
 
 } // namespace terminal_animation

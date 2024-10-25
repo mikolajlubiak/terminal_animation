@@ -16,11 +16,12 @@ void intToRgb(std::uint32_t colorInt, std::uint8_t &r, std::uint8_t &g,
   b = colorInt & 0xFF;         // Extract the blue component
 }
 
-std::vector<std::string> get_file_list(const std::string &directory) {
-  std::vector<std::string> file_list;
+std::vector<std::filesystem::path>
+get_file_list(const std::filesystem::path &directory) {
+  std::vector<std::filesystem::path> file_list;
   for (const auto &entry : std::filesystem::directory_iterator(directory)) {
     if (std::filesystem::is_regular_file(entry)) {
-      file_list.push_back(entry.path().string());
+      file_list.push_back(entry.path());
     }
   }
   return file_list;

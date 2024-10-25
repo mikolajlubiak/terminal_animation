@@ -8,26 +8,23 @@
 namespace terminal_animation {
 
 // Open file
-void MediaToAscii::OpenFile(const std::string &filename) {
+void MediaToAscii::OpenFile(const std::filesystem::path &file) {
   // Make sure that the program doesn't try to read next frame from
   // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
   // the same time.
   std::lock_guard<std::mutex> lock(m_MutexVideo);
 
   // Check if the file is a video or an image
-  if (std::filesystem::path(filename).extension() == ".jpg" ||
-      std::filesystem::path(filename).extension() == ".jpeg" ||
-      std::filesystem::path(filename).extension() == ".png" ||
-      std::filesystem::path(filename).extension() == ".bmp") {
+  if (IsImage(file)) {
     // Load image
-    m_Frame = cv::imread(filename);
+    m_Frame = cv::imread(file);
 
     if (m_Frame.empty()) {
       std::ofstream debug_stream("debug_output.txt",
                                  std::ios::app); // Debug output stream
 
       debug_stream << "[MediaToAscii::OpenFile] Error: Could not open image. "
-                   << filename << std::endl;
+                   << file << std::endl;
 
       debug_stream.close();
 
@@ -38,14 +35,14 @@ void MediaToAscii::OpenFile(const std::string &filename) {
   } else {
 
     // Open the video file
-    m_VideoCapture.open(filename);
+    m_VideoCapture.open(file);
 
     if (!m_VideoCapture.isOpened()) {
       std::ofstream debug_stream("debug_output.txt",
                                  std::ios::app); // Debug output stream
 
       debug_stream << "[MediaToAscii::OpenFile] Error: Could not open video. "
-                   << filename << std::endl;
+                   << file << std::endl;
 
       debug_stream.close();
 
