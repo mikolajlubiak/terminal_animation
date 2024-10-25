@@ -1,6 +1,7 @@
 ![Animation showcase](docs/showcase.gif "Animation showcase")
 
 ## Turn media (video/gif/image) into colored, animated or static, ASCII art
+#### Project development and progress showcase: https://video.infosec.exchange/w/p/vYM6TsSBMGEg1DRHMADXu2
 
 # Build
 Tested on Linux, but if you manage to get HDF5, VTK and OpenCV working, Windows, MacOS, and really any other OS with a CMake port and C++20 compatible compiler, should work as well.
