@@ -71,14 +71,18 @@ private: // Attributes
   // Video frame or image
   cv::Mat m_Frame{};
 
-  // Make sure that the code doesn't try to access next frame and open a
-  // different video
+  // Make sure that the program doesn't try to read next frame from
+  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
+  // the same time.
   std::mutex m_MutexVideo{};
 
   // Make sure that no two threads try to change the chars and colors data
   std::mutex m_MutexCharsAndColors{};
 
-  // Vector with the characters
+  // Make sure that no two threads try to call CalculateCharsAndColors at the
+  // same time.
+  // Make sure that RenderNextFrame won't edit m_Frame while
+  // CalculateCharsAndColors is running.
   CharsAndColors m_CharsAndColors{};
 };
 

@@ -9,8 +9,9 @@ namespace terminal_animation {
 
 // Open file
 void MediaToAscii::OpenFile(const std::string &filename) {
-  // Make sure that the code doesn't try to access next frame and open a
-  // different video
+  // Make sure that the program doesn't try to read next frame from
+  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
+  // the same time.
   std::lock_guard<std::mutex> lock(m_MutexVideo);
 
   // Check if the file is a video or an image
@@ -59,8 +60,9 @@ void MediaToAscii::OpenFile(const std::string &filename) {
 
 // Loop over video and return ASCII chars and colors
 void MediaToAscii::RenderNextFrame() {
-  // Make sure that the code doesn't try to access next frame and open a
-  // different video
+  // Make sure that the program doesn't try to read next frame from
+  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
+  // the same time.
   std::lock_guard<std::mutex> lock(m_MutexVideo);
 
   if (!m_FileLoaded) {
@@ -68,6 +70,10 @@ void MediaToAscii::RenderNextFrame() {
   }
 
   if (m_IsVideo) {
+    // Make sure that RenderNextFrame won't edit m_Frame while
+    // CalculateCharsAndColors is running.
+    std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
+
     // Read next frame from the video
     m_VideoCapture >> m_Frame;
 
@@ -83,7 +89,10 @@ void MediaToAscii::RenderNextFrame() {
 
 // Convert a frame to ASCII chars and colors
 void MediaToAscii::CalculateCharsAndColors() {
-  // Make sure that no two threads try to change the chars and colors data
+  // Make sure that no two threads try to call CalculateCharsAndColors at the
+  // same time.
+  // Make sure that RenderNextFrame won't edit m_Frame while
+  // CalculateCharsAndColors is running.
   std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
 
   // ASCII density array
