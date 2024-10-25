@@ -3,7 +3,7 @@
 ## Turn media (video/gif/image) into animated or static ASCII art
 
 # Build
-Tested on Linux, but Windows, MacOS, and really any other OS with a CMake port and C++20 compatible compiler, should work as well.
+Tested on Linux, but if you manage to get OpenCV working, Windows, MacOS, and really any other OS with a CMake port and C++20 compatible compiler, should work as well.
 
 * Linux (and other Unix systems like MacOS):
     * Install CMake, Git and OpenCV (different commands based on your distribution)
