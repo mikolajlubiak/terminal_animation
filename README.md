@@ -8,6 +8,8 @@ Tested on Linux, but if you manage to get FFmpeg, HDF5, VTK and OpenCV working, 
 
 * Linux (and other Unix systems like MacOS):
     * Install CMake, Git, FFmpeg, HDF5, VTK and OpenCV (different commands based on your distribution)
+        * Fedora: `sudo dnf install cmake git ffmpeg hdf5 vtk opencv opencv-devel`
+        * Arch: `sudo pacman -S --needed cmake git ffmpeg hdf5 vtk opencv`
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
     * `mkdir build`
