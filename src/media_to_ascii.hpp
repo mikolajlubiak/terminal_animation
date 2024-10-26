@@ -56,8 +56,7 @@ public:
   }
 
   // Set blocksize
-  void SetHeight(std::uint32_t height) { m_Height = height; }
-  void SetWidth(std::uint32_t width) { m_Width = width; }
+  void SetSize(std::uint32_t size) { m_Size = size; }
 
 private: // Attributes
   // Loaded video or image
@@ -66,9 +65,8 @@ private: // Attributes
   // Has class loaded any file
   bool m_FileLoaded = false;
 
-  // Blocksize
-  std::uint32_t m_Height = 1;
-  std::uint32_t m_Width = 1;
+  // Image size
+  std::uint32_t m_Size = 1;
 
   // Vidoe capture
   cv::VideoCapture m_VideoCapture{};

@@ -109,9 +109,19 @@ void MediaToAscii::CalculateCharsAndColors() {
     return;
   }
 
-  // Calculate the block size based on user input
-  const std::uint32_t blockSizeX = std::max(1U, m_Frame.cols / m_Height);
-  const std::uint32_t blockSizeY = std::max(1U, m_Frame.rows / m_Width);
+  // Calculate the aspect ratio of the original frame
+  const float aspectRatio =
+      static_cast<float>(m_Frame.cols) / static_cast<float>(m_Frame.rows);
+
+  // Calculate the block size based on desired size
+  const std::uint32_t blockSizeX = std::max(
+      1U,
+      m_Frame.cols /
+          (m_Size *
+           2)); // Scale the size for X, because FTXUI uses 2x4 size characters
+
+  const std::uint32_t blockSizeY = std::max(
+      1U, m_Frame.rows / static_cast<std::uint32_t>(m_Size / aspectRatio));
 
   // Calculate the number of blocks.
   const std::uint32_t numBlocksX = m_Frame.cols / blockSizeX;

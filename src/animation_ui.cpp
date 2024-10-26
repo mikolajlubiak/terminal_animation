@@ -74,8 +74,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
-                        m_pVideoToAscii->SetHeight(size * 2);
-                        m_pVideoToAscii->SetWidth(size);
+                        m_pVideoToAscii->SetSize(size);
 
                         m_pVideoToAscii->CalculateCharsAndColors();
                         m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
