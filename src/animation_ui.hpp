@@ -39,6 +39,12 @@ private: // Methods
   // File explorer window
   ftxui::Component GetFileExplorer();
 
+  // Shortcuts window
+  ftxui::Component GetShortcutsWindow();
+
+  // Handle events (shortcuts)
+  ftxui::ComponentDecorator HandleEvents();
+
   // Force the update of canvas by submitting an event
   void ForceUpdateCanvas();
 
@@ -53,7 +59,14 @@ private: // Methods
   std::filesystem::path HomeDirPath(const std::string &dir_name) const;
 
 private: // Attributes
+  // Show options window
   bool m_ShowOptions = true;
+
+  // Show shortcuts window
+  bool m_ShowShortcuts = true;
+
+  // Should the program be running?
+  bool m_ShouldRun = true;
 
   // FPS of the currently animated media
   std::uint32_t m_FPS = 1;

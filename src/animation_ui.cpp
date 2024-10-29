@@ -31,12 +31,18 @@ void AnimationUI::MainUI() {
   auto main_component = ftxui::Container::Stacked({
       // Options
       ftxui::Maybe(GetOptionsWindow() | ftxui::align_right, &m_ShowOptions),
+
       // File explorer
       GetFileExplorer() | ftxui::align_right | ftxui::vcenter,
 
-      // ASCII
+      // Shortcuts
+      ftxui::Maybe(GetShortcutsWindow(), &m_ShowShortcuts),
+
+      // ASCII art
       CreateRenderer(),
   });
+
+  main_component |= HandleEvents();
 
   m_Screen.Loop(main_component);
 }
@@ -173,7 +179,7 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 
 // Force the update of canvas by submitting an event
 void AnimationUI::ForceUpdateCanvas() {
-  while (true) {
+  while (m_ShouldRun) {
     if (m_pMediaToAscii->GetIsVideo()) {
       m_pMediaToAscii->RenderNextFrame();
       m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
@@ -256,6 +262,53 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
 
   // If there directory doesn't exist, fallback to current working directory.
   return std::filesystem::current_path();
+}
+
+// Shortcuts window
+ftxui::Component AnimationUI::GetShortcutsWindow() {
+  return ftxui::Window({
+      .inner = ftxui::Container::Vertical({
+                   // Shortcuts
+                   ftxui::Renderer([] {
+                     return ftxui::vbox({
+                         ftxui::text("q - Quit") | ftxui::flex,
+                         ftxui::filler(),
+                         ftxui::text("o - Open/hide options") | ftxui::flex,
+                         ftxui::filler(),
+                         ftxui::text("r - Start video/gif from the beginning") |
+                             ftxui::flex,
+                         ftxui::separator(),
+                     });
+                   }),
+                   // Hide window
+                   ftxui::Button("Hide", [&] { m_ShowShortcuts = false; }) |
+                       ftxui::center,
+               }) |
+               ftxui::color(ftxui::Color::Violet),
+
+      .title = "Shortcuts",
+      .width = 40,
+      .height = 9,
+  });
+}
+
+// Handle events (arrows and enter)
+ftxui::ComponentDecorator AnimationUI::HandleEvents() {
+  return ftxui::CatchEvent([this](ftxui::Event event) {
+    if (event == ftxui::Event::Character('q')) {
+      m_ShouldRun = false;
+      m_Screen.ExitLoopClosure()();
+      return true;
+    } else if (event == ftxui::Event::Character('r')) {
+      m_pMediaToAscii->SetFrameIndex(0);
+      return true;
+    } else if (event == ftxui::Event::Character('o')) {
+      m_ShowOptions = !m_ShowOptions;
+      return true;
+    }
+
+    return false;
+  });
 }
 
 } // namespace terminal_animation

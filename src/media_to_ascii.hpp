@@ -58,6 +58,10 @@ public:
   // Set blocksize
   void SetSize(std::uint32_t size) { m_Size = size; }
 
+  void SetFrameIndex(std::uint32_t frame_index) {
+    m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, frame_index);
+  }
+
 private: // Attributes
   // Loaded video or image
   bool m_IsVideo = false;
