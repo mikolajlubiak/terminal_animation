@@ -74,10 +74,10 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
-                        m_pVideoToAscii->SetSize(size);
+                        m_pMediaToAscii->SetSize(size);
 
-                        m_pVideoToAscii->CalculateCharsAndColors();
-                        m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
+                        m_pMediaToAscii->CalculateCharsAndColors();
+                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
                       },
                   .value = 32,
                   .min = 1,
@@ -135,15 +135,15 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 
     } else { // If is file
       // Open the file
-      m_pVideoToAscii->OpenFile(
+      m_pMediaToAscii->OpenFile(
           m_CurrentDirContents[m_SelectedContentIndex].string());
 
       // Update canvas data
-      m_pVideoToAscii->RenderNextFrame();
-      m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
+      m_pMediaToAscii->RenderNextFrame();
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
 
       // Update FPS
-      m_FPS = m_pVideoToAscii->GetFramerate();
+      m_FPS = m_pMediaToAscii->GetFramerate();
     }
   };
 
@@ -174,9 +174,9 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 // Force the update of canvas by submitting an event
 void AnimationUI::ForceUpdateCanvas() {
   while (true) {
-    if (m_pVideoToAscii->GetIsVideo()) {
-      m_pVideoToAscii->RenderNextFrame();
-      m_CanvasData = m_pVideoToAscii->GetCharsAndColors();
+    if (m_pMediaToAscii->GetIsVideo()) {
+      m_pMediaToAscii->RenderNextFrame();
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
     }
 

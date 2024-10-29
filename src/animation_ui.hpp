@@ -61,7 +61,7 @@ private: // Attributes
   ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
 
   // Handle video to animated ASCII convertion
-  std::unique_ptr<MediaToAscii> m_pVideoToAscii =
+  std::unique_ptr<MediaToAscii> m_pMediaToAscii =
       std::make_unique<MediaToAscii>();
 
   // Text that will be on canvas
