@@ -9,10 +9,7 @@ namespace terminal_animation {
 
 // Open file
 void MediaToAscii::OpenFile(const std::filesystem::path &file) {
-  // Make sure that the program doesn't try to read next frame from
-  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
-  // the same time.
-  std::lock_guard<std::mutex> lock(m_MutexVideo);
+  m_FileLoaded = false;
 
   // Check if the file is a video or an image
   if (IsImage(file)) {
@@ -49,49 +46,31 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
       return;
     }
 
-    m_IsVideo = true;
+    if (GetTotalFrameCount() == 0) {
+      m_VideoCapture >> m_Frame;
+      m_IsVideo = false;
+    } else {
+      m_CharsAndColors.clear();
+      m_CharsAndColors.resize(GetTotalFrameCount());
+
+      m_IsVideo = true;
+    }
   }
 
   m_FileLoaded = true;
 }
 
 // Loop over video and return ASCII chars and colors
-void MediaToAscii::RenderNextFrame() {
-  // Make sure that the program doesn't try to read next frame from
-  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
-  // the same time.
-  std::lock_guard<std::mutex> lock(m_MutexVideo);
-
-  if (!m_FileLoaded) {
-    return; // Return empty CharsAndColors
-  }
-
-  if (m_IsVideo) {
-    // Make sure that RenderNextFrame won't edit m_Frame while
-    // CalculateCharsAndColors is running.
-    std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
-
-    // Read next frame from the video
+void MediaToAscii::RenderVideo() {
+  while (GetCurrentFrameIndex() < GetTotalFrameCount() && m_FileLoaded) {
     m_VideoCapture >> m_Frame;
 
-    // If reached the end of the video, reset the capture
-    if (m_Frame.empty()) {
-      m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
-      m_VideoCapture >> m_Frame;
-    }
+    CalculateCharsAndColors(GetCurrentFrameIndex() - 1);
   }
-
-  CalculateCharsAndColors();
 }
 
 // Convert a frame to ASCII chars and colors
-void MediaToAscii::CalculateCharsAndColors() {
-  // Make sure that no two threads try to call CalculateCharsAndColors at the
-  // same time.
-  // Make sure that RenderNextFrame won't edit m_Frame while
-  // CalculateCharsAndColors is running.
-  std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
-
+void MediaToAscii::CalculateCharsAndColors(std::uint32_t index) {
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
@@ -129,11 +108,12 @@ void MediaToAscii::CalculateCharsAndColors() {
 
   // Calculate the average colors for the entire frame and build
   // the output string
-  m_CharsAndColors.chars.clear();
-  m_CharsAndColors.chars.resize(numBlocksX, std::vector<char>(numBlocksY));
+  m_CharsAndColors[index].chars.clear();
+  m_CharsAndColors[index].chars.resize(numBlocksX,
+                                       std::vector<char>(numBlocksY));
 
-  m_CharsAndColors.colors.clear();
-  m_CharsAndColors.colors.resize(
+  m_CharsAndColors[index].colors.clear();
+  m_CharsAndColors[index].colors.resize(
       numBlocksX, std::vector<std::array<std::uint8_t, 3>>(
                       numBlocksY, std::array<std::uint8_t, 3>()));
 
@@ -162,9 +142,12 @@ void MediaToAscii::CalculateCharsAndColors() {
 
       // Calculate R, B and B average color value of the frame
       // region
-      m_CharsAndColors.colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
-      m_CharsAndColors.colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
-      m_CharsAndColors.colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][0] =
+          sum_r / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][1] =
+          sum_g / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][2] =
+          sum_b / (blockSizeX * blockSizeY);
 
       // Calculate average luminance of the frame region
       const unsigned long avg =
@@ -175,7 +158,7 @@ void MediaToAscii::CalculateCharsAndColors() {
           map_value(avg, 0UL, 255UL, 0UL,
                     static_cast<unsigned long>(strlen(density) - 1));
 
-      m_CharsAndColors.chars[i][j] = density[density_index];
+      m_CharsAndColors[index].chars[i][j] = density[density_index];
     }
   }
 }

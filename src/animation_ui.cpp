@@ -26,7 +26,7 @@ AnimationUI::AnimationUI() {
 // Create all needed components and loop
 void AnimationUI::MainUI() {
   auto canvas_updater_handle =
-      std::async(std::launch::async, [this] { ForceUpdateCanvas(); });
+      std::async(std::launch::async, &AnimationUI::ForceUpdateCanvas, this);
 
   auto main_component = ftxui::Container::Stacked({
       // Options
@@ -82,8 +82,16 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                       [&](std::int32_t size) {
                         m_pMediaToAscii->SetSize(size);
 
-                        m_pMediaToAscii->CalculateCharsAndColors();
-                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+                        if (m_pMediaToAscii->GetIsVideo()) {
+                          auto f = std::async(std::launch::async,
+                                              &MediaToAscii::RenderVideo,
+                                              m_pMediaToAscii.get());
+                          m_FrameIndex = 0;
+                        } else {
+                          m_pMediaToAscii->CalculateCharsAndColors(0);
+                        }
+
+                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors(0);
                       },
                   .value = 32,
                   .min = 1,
@@ -144,12 +152,19 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       m_pMediaToAscii->OpenFile(
           m_CurrentDirContents[m_SelectedContentIndex].string());
 
-      // Update canvas data
-      m_pMediaToAscii->RenderNextFrame();
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
-
       // Update FPS
       m_FPS = m_pMediaToAscii->GetFramerate();
+
+      // Update canvas data
+      if (m_pMediaToAscii->GetIsVideo()) {
+        auto f = std::async(std::launch::async, &MediaToAscii::RenderVideo,
+                            m_pMediaToAscii.get());
+        m_FrameIndex = 0;
+      } else {
+        m_pMediaToAscii->CalculateCharsAndColors(0);
+      }
+
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors(0);
     }
   };
 
@@ -181,9 +196,11 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 void AnimationUI::ForceUpdateCanvas() {
   while (m_ShouldRun) {
     if (m_pMediaToAscii->GetIsVideo()) {
-      m_pMediaToAscii->RenderNextFrame();
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors(m_FrameIndex);
+
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
+
+      m_FrameIndex = (m_FrameIndex + 1) % m_pMediaToAscii->GetTotalFrameCount();
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(
@@ -300,7 +317,7 @@ ftxui::ComponentDecorator AnimationUI::HandleEvents() {
       m_Screen.ExitLoopClosure()();
       return true;
     } else if (event == ftxui::Event::Character('r')) {
-      m_pMediaToAscii->SetFrameIndex(0);
+      m_FrameIndex = 0;
       return true;
     } else if (event == ftxui::Event::Character('o')) {
       m_ShowOptions = !m_ShowOptions;

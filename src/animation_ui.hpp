@@ -94,6 +94,9 @@ private: // Attributes
 
   // Explorer window height
   int m_ExplorerWindowHeight;
+
+  // Index of the frame to render
+  std::uint32_t m_FrameIndex = 0;
 };
 
 } // namespace terminal_animation
