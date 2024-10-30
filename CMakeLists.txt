@@ -35,7 +35,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE src PRIVATE ${OpenCV_INCLUDE_
 # Add libraries to link
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE ${OpenCV_LIBS}
-	PRIVATE opencv_videoio
 	PRIVATE ftxui::screen
 	PRIVATE ftxui::dom
 	PRIVATE ftxui::component
