@@ -30,10 +30,12 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add include directories
-target_include_directories(${PROJECT_NAME} PRIVATE src PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE src PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 # Add libraries to link
-target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS}
+target_link_libraries(${PROJECT_NAME}
+	PRIVATE ${OpenCV_LIBS}
+	PRIVATE opencv_videoio
 	PRIVATE ftxui::screen
 	PRIVATE ftxui::dom
 	PRIVATE ftxui::component

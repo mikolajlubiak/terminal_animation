@@ -98,7 +98,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                                                   // options
 
           // Select/save options
-          ftxui::Button("Select", [&] { m_ShowOptions = false; }) |
+          ftxui::Button("Hide", [&] { m_ShowOptions = false; }) |
               ftxui::center | ftxui::color(ftxui::Color::Yellow),
       }),
 
@@ -234,11 +234,12 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
   // Determine the user's home directory
 #ifdef linux
   const char *homeDir = std::getenv("HOME");
-#elifdef _WIN32
-  const char *homeDir = std::getenv("USERPROFILE"); // For Windows
+#elif _WIN32
+  const char* homeDir = std::getenv("USERPROFILE"); // For Windows
 #else
 #error shucks!
 #endif
+
 
   if (homeDir) {
     if (dir_name != "") {
