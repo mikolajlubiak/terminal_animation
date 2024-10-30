@@ -3,10 +3,7 @@
     "configurePresets": [
       {
         "name": "windows",
-        "inherits": "vcpkg",
-        "environment": {
-          "VCPKG_ROOT": "C:/Users/mikol/source/repos/vcpkg"
-        }
+        "inherits": "vcpkg"
       }
     ]
   }
