@@ -88,12 +88,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
 
                         m_pMediaToAscii->CalculateCharsAndColors();
 
-                        {
-                          // Make sure that no two threads try to change the canvas data
-                          std::lock_guard<std::mutex> lock(m_MutexCanvasData);
-
-                          m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
-                        }
+                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
                       },
                   .value = 32,
                   .min = 1,
@@ -157,12 +152,7 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       // Update canvas data
       m_pMediaToAscii->RenderNextFrame();
 
-      {
-        // Make sure that no two threads try to change the canvas data
-        std::lock_guard<std::mutex> lock(m_MutexCanvasData);
-
-        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
-      }
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
 
       // Update FPS
       m_FPS = m_pMediaToAscii->GetFramerate();
