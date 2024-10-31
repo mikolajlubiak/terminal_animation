@@ -67,6 +67,11 @@ void MediaToAscii::RenderNextFrame() {
   }
 
   if (m_IsVideo) {
+    // Make sure that RenderNextFrame won't edit m_Frame while
+    // CalculateCharsAndColors is running.
+    // Make sure that the frame index won't be changed in two places at the same time
+    std::lock_guard<std::mutex> lock(m_MutexFrame);
+
     // Read next frame from the video
     m_VideoCapture >> m_Frame;
 
@@ -82,9 +87,9 @@ void MediaToAscii::RenderNextFrame() {
 
 // Convert a frame to ASCII chars and colors
 void MediaToAscii::CalculateCharsAndColors() {
-  // Make sure that no two threads try to call CalculateCharsAndColors at the
-  // same time.
-  std::lock_guard<std::mutex> lock(m_MutexCharsAndColors);
+  // Make sure that RenderNextFrame won't edit m_Frame while
+  // CalculateCharsAndColors is running.
+  std::lock_guard<std::mutex> lock(m_MutexFrame);
 
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"

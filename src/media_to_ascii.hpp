@@ -59,6 +59,9 @@ public:
   void SetSize(std::uint32_t size) { m_Size = size; }
 
   void SetFrameIndex(std::uint32_t frame_index) {
+    // Make sure that the frame index won't be changed in two places at the same time
+    std::lock_guard<std::mutex> lock(m_MutexFrame);
+
     m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, frame_index);
   }
 
@@ -83,8 +86,8 @@ private: // Attributes
   // the same time.
   std::mutex m_MutexVideo{};
 
-  // Make sure that no two threads try to change the chars and colors data
-  std::mutex m_MutexCharsAndColors{};
+  // Make sure that no two threads try to change the m_Frame data
+  std::mutex m_MutexFrame{};
 
   // Make sure that no two threads try to call CalculateCharsAndColors at the
   // same time.
