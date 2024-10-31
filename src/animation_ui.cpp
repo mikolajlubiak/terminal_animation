@@ -48,13 +48,16 @@ void AnimationUI::MainUI() {
 }
 
 // Create static canvas with the ASCII art
-ftxui::Component AnimationUI::CreateRenderer() const {
+ftxui::Component AnimationUI::CreateRenderer() {
   return ftxui::Renderer([this] { return CreateCanvas(); });
 }
 
 // Create static canvas with the ASCII art
-ftxui::Element AnimationUI::CreateCanvas() const {
+ftxui::Element AnimationUI::CreateCanvas() {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
+    // Make sure that no two threads try to change the canvas data
+    std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
     for (std::uint32_t i = 0; i < m_CanvasData.chars.size(); i++) {
       for (std::uint32_t j = 0; j < m_CanvasData.chars[i].size(); j++) {
         const std::uint8_t r = m_CanvasData.colors[i][j][0];
@@ -80,10 +83,17 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
+
                         m_pMediaToAscii->SetSize(size);
 
                         m_pMediaToAscii->CalculateCharsAndColors();
-                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+
+                        {
+                          // Make sure that no two threads try to change the canvas data
+                          std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
+                          m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+                        }
                       },
                   .value = 32,
                   .min = 1,
@@ -146,7 +156,13 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 
       // Update canvas data
       m_pMediaToAscii->RenderNextFrame();
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+
+      {
+        // Make sure that no two threads try to change the canvas data
+        std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
+        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+      }
 
       // Update FPS
       m_FPS = m_pMediaToAscii->GetFramerate();
@@ -182,7 +198,12 @@ void AnimationUI::ForceUpdateCanvas() {
   while (m_ShouldRun) {
     if (m_pMediaToAscii->GetIsVideo()) {
       m_pMediaToAscii->RenderNextFrame();
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+      {
+        // Make sure that no two threads try to change the canvas data
+        std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
+        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+      }
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
     }
 

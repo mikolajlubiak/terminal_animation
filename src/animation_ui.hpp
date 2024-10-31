@@ -28,10 +28,10 @@ public:
 
 private: // Methods
   // Update static UI
-  ftxui::Component CreateRenderer() const;
+  ftxui::Component CreateRenderer();
 
   // Create static canvas with the ASCII art
-  ftxui::Element CreateCanvas() const;
+  ftxui::Element CreateCanvas();
 
   // Window for selecting options
   ftxui::Component GetOptionsWindow();
@@ -94,6 +94,10 @@ private: // Attributes
 
   // Explorer window height
   int m_ExplorerWindowHeight;
+
+  // Make sure that no two threads try to change the canvas data
+  std::mutex m_MutexCanvasData{};
+
 };
 
 } // namespace terminal_animation
