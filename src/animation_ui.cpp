@@ -48,13 +48,16 @@ void AnimationUI::MainUI() {
 }
 
 // Create static canvas with the ASCII art
-ftxui::Component AnimationUI::CreateRenderer() const {
+ftxui::Component AnimationUI::CreateRenderer() {
   return ftxui::Renderer([this] { return CreateCanvas(); });
 }
 
 // Create static canvas with the ASCII art
-ftxui::Element AnimationUI::CreateCanvas() const {
+ftxui::Element AnimationUI::CreateCanvas() {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
+    // Make sure that no two threads try to change the canvas data
+    std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
     for (std::uint32_t i = 0; i < m_CanvasData.chars.size(); i++) {
       for (std::uint32_t j = 0; j < m_CanvasData.chars[i].size(); j++) {
         const std::uint8_t r = m_CanvasData.colors[i][j][0];
@@ -80,6 +83,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
+
                         m_pMediaToAscii->SetSize(size);
 
                         if (m_pMediaToAscii->GetIsVideo()) {
@@ -106,7 +110,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                                                   // options
 
           // Select/save options
-          ftxui::Button("Select", [&] { m_ShowOptions = false; }) |
+          ftxui::Button("Hide", [&] { m_ShowOptions = false; }) |
               ftxui::center | ftxui::color(ftxui::Color::Yellow),
       }),
 
@@ -163,8 +167,6 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       } else {
         m_pMediaToAscii->CalculateCharsAndColors(0);
       }
-
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors(0);
     }
   };
 
@@ -195,8 +197,13 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 // Force the update of canvas by submitting an event
 void AnimationUI::ForceUpdateCanvas() {
   while (m_ShouldRun) {
-    if (m_pMediaToAscii->GetIsVideo()) {
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors(m_FrameIndex);
+    if (m_pMediaToAscii->GetIsVideo()) {      
+      {
+        // Make sure that no two threads try to change the canvas data
+        std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+
+        m_CanvasData = m_pMediaToAscii->GetCharsAndColors(m_FrameIndex);
+      }
 
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
 
@@ -251,11 +258,12 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
   // Determine the user's home directory
 #ifdef linux
   const char *homeDir = std::getenv("HOME");
-#elifdef _WIN32
-  const char *homeDir = std::getenv("USERPROFILE"); // For Windows
+#elif _WIN32
+  const char* homeDir = std::getenv("USERPROFILE"); // For Windows
 #else
 #error shucks!
 #endif
+
 
   if (homeDir) {
     if (dir_name != "") {

@@ -1,0 +1,14 @@
+{
+  "dependencies": [
+    {
+      "name": "opencv4",
+      "default-features": true,
+      "features": [
+        "ffmpeg",
+        "jpeg",
+        "png",
+        "webp"
+      ]
+    }
+  ]
+}

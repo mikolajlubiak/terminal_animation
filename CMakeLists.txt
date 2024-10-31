@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(terminal_animation VERSION 3.1.0 LANGUAGES C CXX)
+project(terminal_animation VERSION 4.0.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -30,10 +30,11 @@ FetchContent_MakeAvailable(ftxui)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add include directories
-target_include_directories(${PROJECT_NAME} PRIVATE src PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE src PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 # Add libraries to link
-target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS}
+target_link_libraries(${PROJECT_NAME}
+	PRIVATE ${OpenCV_LIBS}
 	PRIVATE ftxui::screen
 	PRIVATE ftxui::dom
 	PRIVATE ftxui::component

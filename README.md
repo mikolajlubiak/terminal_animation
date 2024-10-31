@@ -4,12 +4,12 @@
 #### Project development and progress showcase: https://video.infosec.exchange/w/p/vYM6TsSBMGEg1DRHMADXu2
 
 # Build
-Tested on Linux, but if you manage to get FFmpeg, HDF5, VTK and OpenCV working, Windows, MacOS, and really any other OS with a CMake port and C++20 compatible compiler, should work as well.
+Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmpeg, VTK, OpenCV ports and C++20 compatible compiler, should work as well.
 
 * Linux (and other Unix systems like MacOS):
-    * Install CMake, Git, FFmpeg, HDF5, VTK and OpenCV (different commands based on your distribution)
-        * Fedora: `sudo dnf install cmake git ffmpeg hdf5 vtk opencv opencv-devel`
-        * Arch: `sudo pacman -S --needed cmake git ffmpeg hdf5 vtk opencv`
+    * Install CMake, Git, FFmpeg, VTK and OpenCV (different commands based on your distribution)
+        * Fedora: `sudo dnf install cmake git ffmpeg vtk opencv opencv-devel`
+        * Arch: `sudo pacman -S --needed cmake git ffmpeg vtk opencv`
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
     * `mkdir build`
@@ -20,30 +20,25 @@ Tested on Linux, but if you manage to get FFmpeg, HDF5, VTK and OpenCV working, 
 * Windows (WSL):
     * Setup WSL (Windows Subsystem for Linux)
     * Inside your WSL container do the Linux steps
-* Windows (Native):
-    * Step 1: Fight with setting up FFmpeg, HDF5, VTK and OpenCV
-    * Step 2: Use WSL
-    * But seriously, if you manage to get FFmpeg, HDF5, VTK and OpenCV working:
 * Windows (Visual Studio):
-    * `winget install Git.Git`
-    * `winget install Kitware.CMake`
-    * Make sure you've got the FFmpeg, HDF5, VTK and OpenCV working
+    * `winget install Git.Git Kitware.CMake`
+    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * Open Visual Studio and click "Clone a repository"
     * Under "Repository location" type/paste: https://github.com/mikolajlubiak/terminal_animation
     * Click "Clone" and select the folder inside UI
-    * Wait for the project to setup, press F5, or run the project from UI
+    * Select preset called "windows", wait for the project to setup
+    * Press F5, or run the project from UI
 * Windows (Terminal):
-    * `winget install Git.Git`
-    * `winget install Kitware.CMake`
-    * Make sure you've got the FFmpeg, HDF5, VTK and OpenCV working
+    * `winget install Git.Git Kitware.CMake`
+    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
     * `mkdir build`
     * `cd build`
-    * `cmake ..`
+    * `cmake --preset=windows ..`
     * `cmake --build .`
     * `.\terminal_animation`
 
 # Usage
-* In the options window you can set the media's (video/gif/image) size
+* In the options window you can set the media's size
 * In the file explorer window you can select the media you want to be turned into ASCII art

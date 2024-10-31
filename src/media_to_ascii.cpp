@@ -14,7 +14,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
   // Check if the file is a video or an image
   if (IsImage(file)) {
     // Load image
-    m_Frame = cv::imread(file);
+    m_Frame = cv::imread(file.string());
 
     if (m_Frame.empty()) {
       std::ofstream debug_stream("debug_output.txt",
@@ -32,7 +32,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
   } else {
 
     // Open the video file
-    m_VideoCapture.open(file);
+    m_VideoCapture.open(file.string());
 
     if (!m_VideoCapture.isOpened()) {
       std::ofstream debug_stream("debug_output.txt",
@@ -63,6 +63,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
 // Loop over video and return ASCII chars and colors
 void MediaToAscii::RenderVideo() {
   while (GetCurrentFrameIndex() < GetTotalFrameCount() && m_FileLoaded) {
+    // Read next frame from the video
     m_VideoCapture >> m_Frame;
 
     CalculateCharsAndColors(GetCurrentFrameIndex() - 1);
