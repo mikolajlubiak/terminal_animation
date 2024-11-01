@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(terminal_animation VERSION 4.0.0 LANGUAGES C CXX)
+project(terminal_animation VERSION 4.1.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
