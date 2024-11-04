@@ -249,7 +249,8 @@ void AnimationUI::ForceUpdateCanvas() {
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
 
       // Iterate over the video indefinitely
-      m_FrameIndex = (m_FrameIndex + 1) % m_pMediaToAscii->GetTotalFrameCount();
+      m_FrameIndex =
+          (m_FrameIndex + 1) % (m_pMediaToAscii->GetTotalFrameCount() + 1);
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(
