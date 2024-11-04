@@ -9,7 +9,12 @@ namespace terminal_animation {
 
 // Open file
 void MediaToAscii::OpenFile(const std::filesystem::path &file) {
-  m_FileLoaded = false;
+  // Stop the rendering while new file isn't loaded yet
+  m_ShouldRender = false;
+
+  // Make sure you don't change video capture while it's being used somewhere
+  // else
+  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
 
   // Check if the file is a video or an image
   if (IsImage(file)) {
@@ -46,10 +51,17 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
       return;
     }
 
+    // If the image is loaded using video capture (ffmpeg) instead of imread
+    // (has 0 frames), still treat it as an image
     if (GetTotalFrameCount() == 0) {
       m_VideoCapture >> m_Frame;
       m_IsVideo = false;
     } else {
+      // Make sure to not change the m_CharsAndColors attribute while it's being
+      // used somewhere else
+      std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
+
+      // Clear and resize the vector holding ASCII art information
       m_CharsAndColors.clear();
       m_CharsAndColors.resize(GetTotalFrameCount());
 
@@ -57,21 +69,39 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     }
   }
 
-  m_FileLoaded = true;
+  // Done loading the file
+  m_ShouldRender = true;
 }
 
-// Loop over video and return ASCII chars and colors
+// Render the whole video capture to the m_CharsAndColors attribute
 void MediaToAscii::RenderVideo() {
-  while (GetCurrentFrameIndex() < GetTotalFrameCount() && m_FileLoaded) {
-    // Read next frame from the video
-    m_VideoCapture >> m_Frame;
+  // Stop the rendering while new file isn't loaded yet or when finished
+  while (GetCurrentFrameIndex() <= GetTotalFrameCount() && m_ShouldRender) {
+    {
+      // Make sure you don't change m_Frame while it's being used somewhere else
+      // Make sure that the video capture doesn't change while it's being
+      // accessed here
+      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
 
+      // Read next frame from the video
+      m_VideoCapture >> m_Frame;
+    }
+
+    // cv::CAP_PROP_POS_FRAMES begins counting from 1
+    // (0 means frame is not loaded)
     CalculateCharsAndColors(GetCurrentFrameIndex() - 1);
   }
 }
 
 // Convert a frame to ASCII chars and colors
-void MediaToAscii::CalculateCharsAndColors(std::uint32_t index) {
+void MediaToAscii::CalculateCharsAndColors(const std::uint32_t index) {
+  // Make sure that the m_CharsAndColors attribute doesn't get updated in two
+  // places at the same time
+  std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
+
+  // Make sure that the frame doesn't change while it's being accessed here
+  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";

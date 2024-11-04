@@ -16,6 +16,7 @@ namespace terminal_animation {
 
 class MediaToAscii {
 public:
+  // Struct with the ASCII art colors and characters to print
   struct CharsAndColors {
     std::vector<std::vector<std::array<std::uint8_t, 3>>> colors;
     std::vector<std::vector<char>> chars;
@@ -32,14 +33,19 @@ public:
   // Open file
   void OpenFile(const std::filesystem::path &file);
 
-  // Loop over video and return ASCII chars and colors
+  // Render the whole video capture to the m_CharsAndColors attribute
   void RenderVideo();
 
   // Convert a frame to ASCII chars and colors
-  void CalculateCharsAndColors(std::uint32_t index);
+  void CalculateCharsAndColors(const std::uint32_t index);
 
-  CharsAndColors GetCharsAndColors(std::uint32_t index) {
-    return m_CharsAndColors[index];
+  // If the frame is already rendered return the frame else return empty struct
+  CharsAndColors GetCharsAndColors(const std::uint32_t index) const {
+    if (index < GetCurrentFrameIndex() - 1) {
+      return m_CharsAndColors[index];
+    }
+
+    return CharsAndColors{};
   }
 
   // Get framerate
@@ -50,7 +56,7 @@ public:
   }
 
   // Return currently accessed frame index
-  std::uint32_t GetCurrentFrameIndex() const {
+  std::int32_t GetCurrentFrameIndex() const {
     return m_VideoCapture.get(cv::CAP_PROP_POS_FRAMES);
   }
 
@@ -60,26 +66,28 @@ public:
   }
 
   // Get whether a video or an image is loaded
-  bool GetIsVideo() const { return m_IsVideo; }
+  bool IsVideo() const { return m_IsVideo; }
 
+  // Check the file extension to determine whether its an image
   bool IsImage(const std::filesystem::path &filename) const {
     return filename.extension() == ".jpg" || filename.extension() == ".jpeg" ||
            filename.extension() == ".png" || filename.extension() == ".bmp";
   }
 
   // Set blocksize
-  void SetSize(std::uint32_t size) { m_Size = size; }
+  void SetSize(const std::uint32_t size) { m_Size = size; }
 
-  void SetFrameIndex(std::uint32_t frame_index) {
-    m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, frame_index);
+  // Set whether to continue rendering
+  void ContinueRendring(const bool should_render) {
+    m_ShouldRender = should_render;
   }
 
 private: // Attributes
   // Loaded video or image
   bool m_IsVideo = false;
 
-  // Has class loaded any file
-  bool m_FileLoaded = false;
+  // Should you contine rendering?
+  bool m_ShouldRender = false;
 
   // Whether to render media
   bool m_RenderMedia = false;
@@ -93,7 +101,16 @@ private: // Attributes
   // Video frame or image
   cv::Mat m_Frame{};
 
+  // Vector holding the ASCII art information
   std::vector<CharsAndColors> m_CharsAndColors{{}};
+
+  // Make sure that the m_CharsAndColors attribute doesn't get updated in two
+  // places at the same time
+  std::mutex m_MutexCharsAndColors{};
+
+  // Make sure that the frame or video capture does't get updated in two places
+  // at the same time
+  std::mutex m_MutexVideoCapture{};
 };
 
 } // namespace terminal_animation
