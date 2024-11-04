@@ -12,12 +12,12 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
   // Stop the rendering while new file isn't loaded yet
   m_ShouldRender = false;
 
-  // Make sure you don't change video capture while it's being used somewhere
-  // else
-  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
-
   // Check if the file is a video or an image
   if (IsImage(file)) {
+    // Make sure you don't change video capture while it's being used
+    // somewhere else
+    std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+
     // Load image
     m_Frame = cv::imread(file.string());
 
@@ -36,8 +36,14 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     m_IsVideo = false;
   } else {
 
-    // Open the video file
-    m_VideoCapture.open(file.string());
+    {
+      // Make sure you don't change video capture while it's being used
+      // somewhere else
+      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+
+      // Open the video file
+      m_VideoCapture.open(file.string());
+    }
 
     if (!m_VideoCapture.isOpened()) {
       std::ofstream debug_stream("debug_output.txt",
@@ -54,6 +60,10 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     // If the image is loaded using video capture (ffmpeg) instead of imread
     // (has 0 frames), still treat it as an image
     if (GetTotalFrameCount() == 0) {
+      // Make sure you don't change video capture while it's being used
+      // somewhere else
+      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+
       m_VideoCapture >> m_Frame;
       m_IsVideo = false;
     } else {
