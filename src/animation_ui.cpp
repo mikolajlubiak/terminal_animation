@@ -6,7 +6,6 @@
 
 // std
 #include <fstream>
-#include <future>
 #include <memory>
 
 namespace terminal_animation {
@@ -25,8 +24,8 @@ AnimationUI::AnimationUI() {
 
 // Create all needed components and loop
 void AnimationUI::MainUI() {
-  auto canvas_updater_handle =
-      std::async(std::launch::async, [this] { ForceUpdateCanvas(); });
+  m_threadForceCanvasUpdate =
+      std::thread(&AnimationUI::ForceUpdateCanvas, this);
 
   auto main_component = ftxui::Container::Stacked({
       // Options
@@ -45,6 +44,15 @@ void AnimationUI::MainUI() {
   main_component |= HandleEvents();
 
   m_Screen.Loop(main_component);
+
+  // Wait for the threads to finish their jobs before exiting
+  if (m_threadRenderVideo.joinable()) {
+    m_threadRenderVideo.join();
+  }
+
+  if (m_threadForceCanvasUpdate.joinable()) {
+    m_threadForceCanvasUpdate.join();
+  }
 }
 
 // Create static canvas with the ASCII art
@@ -56,7 +64,7 @@ ftxui::Component AnimationUI::CreateRenderer() {
 ftxui::Element AnimationUI::CreateCanvas() {
   auto frame = ftxui::canvas([this](ftxui::Canvas &canvas) {
     // Make sure that no two threads try to change the canvas data
-    std::lock_guard<std::mutex> lock(m_MutexCanvasData);
+    std::lock_guard<std::mutex> lockCanvasData(m_MutexCanvasData);
 
     for (std::uint32_t i = 0; i < m_CanvasData.chars.size(); i++) {
       for (std::uint32_t j = 0; j < m_CanvasData.chars[i].size(); j++) {
@@ -64,6 +72,7 @@ ftxui::Element AnimationUI::CreateCanvas() {
         const std::uint8_t g = m_CanvasData.colors[i][j][1];
         const std::uint8_t b = m_CanvasData.colors[i][j][2];
 
+        // x and y are assumed to be multiples of 2 and 4 respectively
         canvas.DrawText(i * 2, j * 4, std::string(1, m_CanvasData.chars[i][j]),
                         ftxui::Color(r, g, b));
       }
@@ -83,12 +92,33 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
-
+                        // Change the blocksize
                         m_pMediaToAscii->SetSize(size);
 
-                        m_pMediaToAscii->CalculateCharsAndColors();
+                        // If the media is video, render it in the background
+                        if (m_pMediaToAscii->IsVideo()) {
+                          m_pMediaToAscii->ContinueRendring(false);
 
-                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+                          if (m_threadRenderVideo.joinable()) {
+                            m_threadRenderVideo.join();
+                          }
+
+                          m_pMediaToAscii->ContinueRendring(true);
+
+                          m_threadRenderVideo =
+                              std::thread(&MediaToAscii::RenderVideo,
+                                          m_pMediaToAscii.get());
+
+                          std::lock_guard<std::mutex> lockFrameIndex(
+                              m_MutexFrameIndex);
+
+                          m_FrameIndex = 0;
+                        } else { // If the media is an image render it once
+                          m_pMediaToAscii->CalculateCharsAndColors(0);
+                        }
+
+                        // Update the canvas data
+                        m_CanvasData = m_pMediaToAscii->GetCharsAndColors(0);
                       },
                   .value = 32,
                   .min = 1,
@@ -149,13 +179,26 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       m_pMediaToAscii->OpenFile(
           m_CurrentDirContents[m_SelectedContentIndex].string());
 
-      // Update canvas data
-      m_pMediaToAscii->RenderNextFrame();
-
-      m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
-
       // Update FPS
       m_FPS = m_pMediaToAscii->GetFramerate();
+
+      // If the media is video, render it in the background
+      if (m_pMediaToAscii->IsVideo()) {
+        if (m_threadRenderVideo.joinable()) {
+          m_threadRenderVideo.join();
+        }
+        m_threadRenderVideo =
+            std::thread(&MediaToAscii::RenderVideo, m_pMediaToAscii.get());
+
+        std::lock_guard<std::mutex> lockFrameIndex(m_MutexFrameIndex);
+
+        m_FrameIndex = 0;
+      } else { // If the media is an image render it once
+        m_pMediaToAscii->CalculateCharsAndColors(0);
+      }
+
+      // Update the canvas data
+      m_CanvasData = m_pMediaToAscii->GetCharsAndColors(0);
     }
   };
 
@@ -186,15 +229,20 @@ ftxui::Component AnimationUI::GetFileExplorer() {
 // Force the update of canvas by submitting an event
 void AnimationUI::ForceUpdateCanvas() {
   while (m_ShouldRun) {
-    if (m_pMediaToAscii->GetIsVideo()) {
-      m_pMediaToAscii->RenderNextFrame();
+    if (m_pMediaToAscii->IsVideo()) {
+      std::lock_guard<std::mutex> lock(m_MutexFrameIndex);
+
       {
         // Make sure that no two threads try to change the canvas data
         std::lock_guard<std::mutex> lock(m_MutexCanvasData);
 
-        m_CanvasData = m_pMediaToAscii->GetCharsAndColors();
+        m_CanvasData = m_pMediaToAscii->GetCharsAndColors(m_FrameIndex);
       }
+
       m_Screen.PostEvent(ftxui::Event::Custom); // Send the event
+
+      // Iterate over the video indefinitely
+      m_FrameIndex = (m_FrameIndex + 1) % m_pMediaToAscii->GetTotalFrameCount();
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(
@@ -243,14 +291,13 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
   std::filesystem::path path;
 
   // Determine the user's home directory
-#ifdef linux
+#ifdef __linux__
   const char *homeDir = std::getenv("HOME");
 #elif _WIN32
-  const char* homeDir = std::getenv("USERPROFILE"); // For Windows
+  const char *homeDir = std::getenv("USERPROFILE"); // For Windows
 #else
 #error shucks!
 #endif
-
 
   if (homeDir) {
     if (dir_name != "") {
@@ -312,7 +359,8 @@ ftxui::ComponentDecorator AnimationUI::HandleEvents() {
       m_Screen.ExitLoopClosure()();
       return true;
     } else if (event == ftxui::Event::Character('r')) {
-      m_pMediaToAscii->SetFrameIndex(0);
+      std::lock_guard<std::mutex> lock(m_MutexFrameIndex);
+      m_FrameIndex = 0;
       return true;
     } else if (event == ftxui::Event::Character('o')) {
       m_ShowOptions = !m_ShowOptions;

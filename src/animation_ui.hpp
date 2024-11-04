@@ -15,12 +15,12 @@
 // std
 #include <filesystem>
 #include <memory>
+#include <thread>
 
 namespace terminal_animation {
 
 class AnimationUI {
 public:
-  // Default con
   AnimationUI();
 
   // Create all needed components and loop
@@ -95,9 +95,21 @@ private: // Attributes
   // Explorer window height
   int m_ExplorerWindowHeight;
 
+  // Index of the frame to render
+  std::uint32_t m_FrameIndex = 0;
+
   // Make sure that no two threads try to change the canvas data
   std::mutex m_MutexCanvasData{};
 
+  // Make sure to not change the m_FrameIndex attribute in two places at the
+  // same time
+  std::mutex m_MutexFrameIndex{};
+
+  // Thread for updating the canvas
+  std::thread m_threadForceCanvasUpdate;
+
+  // Thread for rendering the whole video
+  std::thread m_threadRenderVideo;
 };
 
 } // namespace terminal_animation

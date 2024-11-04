@@ -9,10 +9,12 @@ namespace terminal_animation {
 
 // Open file
 void MediaToAscii::OpenFile(const std::filesystem::path &file) {
-  // Make sure that the program doesn't try to read next frame from
-  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
-  // the same time.
-  std::lock_guard<std::mutex> lock(m_MutexVideo);
+  // Stop the rendering while new file isn't loaded yet
+  m_ShouldRender = false;
+
+  // Make sure you don't change video capture while it's being used somewhere
+  // else
+  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
 
   // Check if the file is a video or an image
   if (IsImage(file)) {
@@ -49,47 +51,56 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
       return;
     }
 
-    m_IsVideo = true;
-  }
-
-  m_FileLoaded = true;
-}
-
-// Loop over video and return ASCII chars and colors
-void MediaToAscii::RenderNextFrame() {
-  // Make sure that the program doesn't try to read next frame from
-  // the m_VideoCapture and edit the m_VideoCapture, by opening a new video, at
-  // the same time.
-  std::lock_guard<std::mutex> lock(m_MutexVideo);
-
-  if (!m_FileLoaded) {
-    return; // Return empty CharsAndColors
-  }
-
-  if (m_IsVideo) {
-    // Make sure that RenderNextFrame won't edit m_Frame while
-    // CalculateCharsAndColors is running.
-    // Make sure that the frame index won't be changed in two places at the same time
-    std::lock_guard<std::mutex> lock(m_MutexFrame);
-
-    // Read next frame from the video
-    m_VideoCapture >> m_Frame;
-
-    // If reached the end of the video, reset the capture
-    if (m_Frame.empty()) {
-      m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, 0);
+    // If the image is loaded using video capture (ffmpeg) instead of imread
+    // (has 0 frames), still treat it as an image
+    if (GetTotalFrameCount() == 0) {
       m_VideoCapture >> m_Frame;
+      m_IsVideo = false;
+    } else {
+      // Make sure to not change the m_CharsAndColors attribute while it's being
+      // used somewhere else
+      std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
+
+      // Clear and resize the vector holding ASCII art information
+      m_CharsAndColors.clear();
+      m_CharsAndColors.resize(GetTotalFrameCount());
+
+      m_IsVideo = true;
     }
   }
 
-  CalculateCharsAndColors();
+  // Done loading the file
+  m_ShouldRender = true;
+}
+
+// Render the whole video capture to the m_CharsAndColors attribute
+void MediaToAscii::RenderVideo() {
+  // Stop the rendering while new file isn't loaded yet or when finished
+  while (GetCurrentFrameIndex() <= GetTotalFrameCount() && m_ShouldRender) {
+    {
+      // Make sure you don't change m_Frame while it's being used somewhere else
+      // Make sure that the video capture doesn't change while it's being
+      // accessed here
+      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+
+      // Read next frame from the video
+      m_VideoCapture >> m_Frame;
+    }
+
+    // cv::CAP_PROP_POS_FRAMES begins counting from 1
+    // (0 means frame is not loaded)
+    CalculateCharsAndColors(GetCurrentFrameIndex() - 1);
+  }
 }
 
 // Convert a frame to ASCII chars and colors
-void MediaToAscii::CalculateCharsAndColors() {
-  // Make sure that RenderNextFrame won't edit m_Frame while
-  // CalculateCharsAndColors is running.
-  std::lock_guard<std::mutex> lock(m_MutexFrame);
+void MediaToAscii::CalculateCharsAndColors(const std::uint32_t index) {
+  // Make sure that the m_CharsAndColors attribute doesn't get updated in two
+  // places at the same time
+  std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
+
+  // Make sure that the frame doesn't change while it's being accessed here
+  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
 
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
@@ -128,11 +139,12 @@ void MediaToAscii::CalculateCharsAndColors() {
 
   // Calculate the average colors for the entire frame and build
   // the output string
-  m_CharsAndColors.chars.clear();
-  m_CharsAndColors.chars.resize(numBlocksX, std::vector<char>(numBlocksY));
+  m_CharsAndColors[index].chars.clear();
+  m_CharsAndColors[index].chars.resize(numBlocksX,
+                                       std::vector<char>(numBlocksY));
 
-  m_CharsAndColors.colors.clear();
-  m_CharsAndColors.colors.resize(
+  m_CharsAndColors[index].colors.clear();
+  m_CharsAndColors[index].colors.resize(
       numBlocksX, std::vector<std::array<std::uint8_t, 3>>(
                       numBlocksY, std::array<std::uint8_t, 3>()));
 
@@ -161,9 +173,12 @@ void MediaToAscii::CalculateCharsAndColors() {
 
       // Calculate R, B and B average color value of the frame
       // region
-      m_CharsAndColors.colors[i][j][0] = sum_r / (blockSizeX * blockSizeY);
-      m_CharsAndColors.colors[i][j][1] = sum_g / (blockSizeX * blockSizeY);
-      m_CharsAndColors.colors[i][j][2] = sum_b / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][0] =
+          sum_r / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][1] =
+          sum_g / (blockSizeX * blockSizeY);
+      m_CharsAndColors[index].colors[i][j][2] =
+          sum_b / (blockSizeX * blockSizeY);
 
       // Calculate average luminance of the frame region
       const unsigned long avg =
@@ -174,7 +189,7 @@ void MediaToAscii::CalculateCharsAndColors() {
           map_value(avg, 0UL, 255UL, 0UL,
                     static_cast<unsigned long>(strlen(density) - 1));
 
-      m_CharsAndColors.chars[i][j] = density[density_index];
+      m_CharsAndColors[index].chars[i][j] = density[density_index];
     }
   }
 }
