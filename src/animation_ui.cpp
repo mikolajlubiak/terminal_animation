@@ -45,6 +45,9 @@ void AnimationUI::MainUI() {
 
   m_Screen.Loop(main_component);
 
+  m_pMediaToAscii->ContinueRendring(false);
+  m_ShouldRun = false;
+
   // Wait for the threads to finish their jobs before exiting
   if (m_threadRenderVideo.joinable()) {
     m_threadRenderVideo.join();
@@ -355,6 +358,7 @@ ftxui::Component AnimationUI::GetShortcutsWindow() {
 ftxui::ComponentDecorator AnimationUI::HandleEvents() {
   return ftxui::CatchEvent([this](ftxui::Event event) {
     if (event == ftxui::Event::Character('q')) {
+      m_pMediaToAscii->ContinueRendring(false);
       m_ShouldRun = false;
       m_Screen.ExitLoopClosure()();
       return true;
