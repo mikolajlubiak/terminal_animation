@@ -39,13 +39,15 @@ public:
   // Convert a frame to ASCII chars and colors
   void CalculateCharsAndColors(const std::uint32_t index);
 
-  // If the frame is already rendered return the frame else return empty struct
+  // If the frame is already rendered return the frame else return the newest
+  // rendered frame
   CharsAndColors GetCharsAndColors(const std::uint32_t index) const {
-    if (index < GetCurrentFrameIndex() - 1) {
-      return m_CharsAndColors[index];
+    if (GetCurrentFrameIndex() < 1) {
+      return CharsAndColors{};
     }
 
-    return CharsAndColors{};
+    return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1,
+                                     static_cast<std::int32_t>(index))];
   }
 
   // Get framerate
