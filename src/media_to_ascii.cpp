@@ -14,9 +14,9 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
 
   // Check if the file is a video or an image
   if (IsImage(file)) {
-    // Make sure you don't change video capture while it's being used
+    // Make sure you don't change frame while it's being used
     // somewhere else
-    std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+    std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
 
     // Load image
     m_Frame = cv::imread(file.string());
@@ -60,9 +60,9 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     // If the image is loaded using video capture (ffmpeg) instead of imread
     // (has 0 frames), still treat it as an image
     if (GetTotalFrameCount() == 0) {
-      // Make sure you don't change video capture while it's being used
+      // Make sure you don't change frame while it's being used
       // somewhere else
-      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+      std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
 
       m_VideoCapture >> m_Frame;
       m_IsVideo = false;
@@ -92,6 +92,7 @@ void MediaToAscii::RenderVideo() {
       // Make sure that the video capture doesn't change while it's being
       // accessed here
       std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+      std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
 
       // Read next frame from the video
       m_VideoCapture >> m_Frame;
@@ -110,7 +111,7 @@ void MediaToAscii::CalculateCharsAndColors(const std::uint32_t index) {
   std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
 
   // Make sure that the frame doesn't change while it's being accessed here
-  std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
+  std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
 
   // ASCII density array
   constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"

@@ -108,9 +108,13 @@ private: // Attributes
   // places at the same time
   std::mutex m_MutexCharsAndColors{};
 
-  // Make sure that the frame or video capture does't get updated in two places
+  // Make sure that the video capture does't get updated in two places
   // at the same time
   std::mutex m_MutexVideoCapture{};
+
+  // Make sure that the frame does't get updated in two places
+  // at the same time
+  std::mutex m_MutexFrame{};
 };
 
 } // namespace terminal_animation

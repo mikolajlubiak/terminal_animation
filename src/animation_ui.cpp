@@ -178,13 +178,9 @@ ftxui::Component AnimationUI::GetFileExplorer() {
           static_cast<int>(m_CurrentDirContents.size()) + 6;
 
     } else { // If is file
-      {
-        std::lock_guard<std::mutex> lock(m_MutexFrameIndex);
-
-        // Open the file
-        m_pMediaToAscii->OpenFile(
-            m_CurrentDirContents[m_SelectedContentIndex].string());
-      }
+      // Open the file
+      m_pMediaToAscii->OpenFile(
+          m_CurrentDirContents[m_SelectedContentIndex].string());
 
       // Update FPS
       m_FPS = m_pMediaToAscii->GetFramerate();
