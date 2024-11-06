@@ -143,6 +143,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
       .title = "Options",
       .width = 32,
       .height = 8,
+      .render = {},
   });
 }
 
@@ -224,6 +225,7 @@ ftxui::Component AnimationUI::GetFileExplorer() {
       .title = "Explore",
       .width = 30,
       .height = &m_ExplorerWindowHeight,
+      .render = {},
   });
 
   return explorer_window;
@@ -352,6 +354,7 @@ ftxui::Component AnimationUI::GetShortcutsWindow() {
       .title = "Shortcuts",
       .width = 40,
       .height = 9,
+      .render = {},
   });
 }
 

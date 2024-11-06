@@ -100,7 +100,8 @@ void MediaToAscii::RenderVideo() {
 
     // cv::CAP_PROP_POS_FRAMES begins counting from 1
     // (0 means frame is not loaded)
-    CalculateCharsAndColors(GetCurrentFrameIndex() - 1);
+    CalculateCharsAndColors(static_cast<std::int32_t>(GetCurrentFrameIndex()) -
+                            1);
   }
 }
 

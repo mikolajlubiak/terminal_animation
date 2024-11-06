@@ -46,8 +46,7 @@ public:
       return CharsAndColors{};
     }
 
-    return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1,
-                                     static_cast<std::int32_t>(index))];
+    return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1, index)];
   }
 
   // Get framerate
@@ -58,7 +57,7 @@ public:
   }
 
   // Return currently accessed frame index
-  std::int32_t GetCurrentFrameIndex() const {
+  std::uint32_t GetCurrentFrameIndex() const {
     return m_VideoCapture.get(cv::CAP_PROP_POS_FRAMES);
   }
 
