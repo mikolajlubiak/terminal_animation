@@ -119,15 +119,6 @@ void MediaToAscii::CalculateCharsAndColors(const std::uint32_t index) {
                              "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
   if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
-    std::ofstream debug_stream("debug_output.txt",
-                               std::ios::app); // Debug output stream
-
-    debug_stream
-        << "[MediaToAscii::CalculateCharsAndColors] Warning: Frame is empty."
-        << std::endl;
-
-    debug_stream.close();
-
     return;
   }
 

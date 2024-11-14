@@ -42,7 +42,7 @@ public:
   // If the frame is already rendered return the frame else return the newest
   // rendered frame
   CharsAndColors GetCharsAndColors(const std::uint32_t index) const {
-    if (GetCurrentFrameIndex() < 1) {
+    if (IsVideo() && GetCurrentFrameIndex() < 1) {
       return CharsAndColors{};
     }
 
