@@ -95,6 +95,10 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
               ftxui::SliderWithCallbackOption<std::int32_t>{
                   .callback =
                       [&](std::int32_t size) {
+                        if (m_pMediaToAscii->GetSize() == size) {
+                          return;
+                        }
+
                         // Change the blocksize
                         m_pMediaToAscii->SetSize(size);
 

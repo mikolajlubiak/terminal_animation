@@ -13,7 +13,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
   m_ShouldRender = false;
 
   // Check if the file is a video or an image
-  if (IsImage(file)) {
+  if (IsImageExtension(file)) {
     // Make sure you don't change frame while it's being used
     // somewhere else
     std::lock_guard<std::mutex> lockFrame(m_MutexFrame);

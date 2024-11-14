@@ -42,11 +42,15 @@ public:
   // If the frame is already rendered return the frame else return the newest
   // rendered frame
   CharsAndColors GetCharsAndColors(const std::uint32_t index) const {
-    if (IsVideo() && GetCurrentFrameIndex() < 1) {
-      return CharsAndColors{};
+    if (IsVideo()) {
+      if (GetCurrentFrameIndex() < 1) {
+        return CharsAndColors{};
+      }
+
+      return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1, index)];
     }
 
-    return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1, index)];
+    return m_CharsAndColors[index];
   }
 
   // Get framerate
@@ -70,7 +74,7 @@ public:
   bool IsVideo() const { return m_IsVideo; }
 
   // Check the file extension to determine whether its an image
-  bool IsImage(const std::filesystem::path &filename) const {
+  bool IsImageExtension(const std::filesystem::path &filename) const {
     return filename.extension() == ".jpg" || filename.extension() == ".jpeg" ||
            filename.extension() == ".png" || filename.extension() == ".bmp";
   }
@@ -78,13 +82,16 @@ public:
   // Set blocksize
   void SetSize(const std::uint32_t size) { m_Size = size; }
 
+  // Get blocksize
+  std::uint32_t GetSize() const { return m_Size; }
+
   // Set whether to continue rendering
   void ContinueRendring(const bool should_render) {
     m_ShouldRender = should_render;
   }
 
   // Set current frame index
-  void SetCurrentFrameIndex(std::uint32_t index) {
+  void SetCurrentFrameIndex(const std::uint32_t index) {
     m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, index);
   }
 
