@@ -83,6 +83,11 @@ public:
     m_ShouldRender = should_render;
   }
 
+  // Set current frame index
+  void SetCurrentFrameIndex(std::uint32_t index) {
+    m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, index);
+  }
+
 private: // Attributes
   // Loaded video or image
   bool m_IsVideo = false;

@@ -107,6 +107,7 @@ ftxui::Component AnimationUI::GetOptionsWindow() {
                           }
 
                           m_pMediaToAscii->ContinueRendring(true);
+                          m_pMediaToAscii->SetCurrentFrameIndex(0);
 
                           m_threadRenderVideo =
                               std::thread(&MediaToAscii::RenderVideo,
