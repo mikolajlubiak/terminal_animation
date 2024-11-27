@@ -42,3 +42,12 @@ Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmp
 # Usage
 * In the options window you can set the media's size
 * In the file explorer window you can select the media you want to be turned into ASCII art
+
+> [!NOTE]
+> # Contribution
+> For the purposes of this project, I added functionality to the library I use.
+> I wanted the memory board grid to update in real time as the slider value changes.
+> There was no way to do that, so I quickly studied the library's source code and added that feature myself.
+> I achieved this by making the slider call a callback function each time the slider value change.
+> I've made a pull request to the upstream, original library, and it has been merged.
+> Pull request: https://github.com/ArthurSonzogni/FTXUI/pull/938
