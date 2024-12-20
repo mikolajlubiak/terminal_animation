@@ -26,7 +26,7 @@ Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmp
     * Under "Repository location" type/paste: https://github.com/mikolajlubiak/terminal_animation
     * Click "Clone" and select the folder inside UI
     * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
-    * Select preset called "windows", wait for the project to setup (this might take very long or not work at all, use Linux)
+    * Select preset called "windows", wait for the project to setup (this might take very long)
     * Press F5, or run the project from UI
 * Windows (Terminal):
     * `winget install Git.Git Kitware.CMake`
@@ -35,7 +35,7 @@ Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmp
     * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * `mkdir build`
     * `cd build`
-    * `cmake --preset=windows ..` (this might take very long or not work at all, use Linux)
+    * `cmake --preset=windows ..` (this might take very long)
     * `cmake --build .`
     * `.\terminal_animation`
 
