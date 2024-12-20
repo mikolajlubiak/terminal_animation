@@ -22,17 +22,17 @@ Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmp
     * Inside your WSL container do the Linux steps
 * Windows (Visual Studio):
     * `winget install Git.Git Kitware.CMake`
-    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * Open Visual Studio and click "Clone a repository"
     * Under "Repository location" type/paste: https://github.com/mikolajlubiak/terminal_animation
     * Click "Clone" and select the folder inside UI
+    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * Select preset called "windows", wait for the project to setup (this will take very long)
     * Press F5, or run the project from UI
 * Windows (Terminal):
     * `winget install Git.Git Kitware.CMake`
-    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
+    * Setup vcpkg, add `VCPKG_ROOT` environmental variable and edit `CMakeUserPresets.json`: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell#1---set-up-vcpkg
     * `mkdir build`
     * `cd build`
     * `cmake --preset=windows ..`
