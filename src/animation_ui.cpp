@@ -4,10 +4,6 @@
 // local
 #include "slider_with_callback.hpp"
 
-// libs
-// spdlog
-#include <spdlog/spdlog.h>
-
 // std
 #include <memory>
 
@@ -322,7 +318,7 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
     if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
       return path;
     } else {
-      spdlog::error(
+      m_Logger->error(
           "[AnimationUI::HomeDirPath] - Given directory doesn't exist: {}",
           path.string());
     }

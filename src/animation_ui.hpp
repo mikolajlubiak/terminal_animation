@@ -11,6 +11,9 @@
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+// spdlog
+#include "spdlog/async.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 // std
 #include <filesystem>
@@ -110,6 +113,9 @@ private: // Attributes
 
   // Thread for rendering the whole video
   std::thread m_threadRenderVideo;
+
+  // Log debug information to a file
+  std::shared_ptr<spdlog::logger> m_Logger = spdlog::basic_logger_mt<spdlog::async_factory>("AnimationUI", "logs/debug.txt");
 };
 
 } // namespace terminal_animation

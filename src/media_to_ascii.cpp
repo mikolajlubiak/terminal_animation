@@ -1,10 +1,6 @@
 // header
 #include "media_to_ascii.hpp"
 
-// libs
-// spdlog
-#include <spdlog/spdlog.h>
-
 // std
 #include <filesystem>
 
@@ -25,7 +21,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     m_Frame = cv::imread(file.string());
 
     if (m_Frame.empty()) {
-      spdlog::error("[MediaToAscii::OpenFile] - Could not open image: {}",
+      m_Logger->error("[MediaToAscii::OpenFile] - Could not open image: {}",
                     file.string());
 
       return;
@@ -44,7 +40,7 @@ void MediaToAscii::OpenFile(const std::filesystem::path &file) {
     }
 
     if (!m_VideoCapture.isOpened()) {
-      spdlog::error("[MediaToAscii::OpenFile] - Could not open video: {}",
+      m_Logger->error("[MediaToAscii::OpenFile] - Could not open video: {}",
                     file.string());
 
       return;

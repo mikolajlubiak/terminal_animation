@@ -6,6 +6,9 @@
 // lib
 // OpenCV
 #include <opencv2/opencv.hpp>
+// spdlog
+#include "spdlog/async.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 // std
 #include <cstdint>
@@ -125,6 +128,9 @@ private: // Attributes
   // Make sure that the frame does't get updated in two places
   // at the same time
   std::mutex m_MutexFrame{};
+
+  // Log debug information to a file
+  std::shared_ptr<spdlog::logger> m_Logger = spdlog::basic_logger_mt<spdlog::async_factory>("MediaToAscii", "logs/debug.txt");
 };
 
 } // namespace terminal_animation
