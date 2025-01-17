@@ -4,12 +4,16 @@
 #### Project development and progress showcase: https://video.infosec.exchange/w/p/vYM6TsSBMGEg1DRHMADXu2
 
 # Build
-Tested on Linux and Windows, but MacOS, and really any other OS with CMake, FFmpeg, VTK, OpenCV ports and C++20 compatible compiler, should work as well.
+Tested on Linux and Windows.
 
 * Linux (and other Unix systems like MacOS):
-    * Install CMake, Git, FFmpeg, VTK and OpenCV (different commands based on your distribution)
-        * Fedora: `sudo dnf install cmake git ffmpeg vtk opencv opencv-devel`
-        * Arch: `sudo pacman -S --needed cmake git ffmpeg vtk opencv`
+    * Install necessary packages (different commands based on your distribution)
+        * Fedora: 
+            * `sudo dnf install cmake git ffmpeg vtk opencv opencv-devel spdlog spdlog-devel`
+        * Arch:
+            * `sudo pacman -S --needed cmake git ffmpeg vtk opencv spdlog`
+        * Ubuntu:
+            * `sudo apt install cmake git ffmpeg opencv spdlog`
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
     * `mkdir build`
