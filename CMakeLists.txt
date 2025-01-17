@@ -28,6 +28,7 @@ file (GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "src/*.hpp")
 
 # Check if OpenCV is installed
 find_package(OpenCV REQUIRED)
+find_package(spdlog REQUIRED)
 
 # Get FTXUI
 FetchContent_Declare(ftxui
@@ -48,7 +49,11 @@ enable_cxx_compiler_flag_if_supported("-pedantic")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Add include directories
-target_include_directories(${PROJECT_NAME} PRIVATE src PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} 
+	PRIVATE src
+	PRIVATE ${OpenCV_INCLUDE_DIRS}
+	PRIVATE spdlog::spdlog
+)
 
 # Add libraries to link
 target_link_libraries(${PROJECT_NAME}
@@ -56,4 +61,5 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE ftxui::screen
 	PRIVATE ftxui::dom
 	PRIVATE ftxui::component
+	PRIVATE spdlog::spdlog
 )

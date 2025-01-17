@@ -4,8 +4,11 @@
 // local
 #include "slider_with_callback.hpp"
 
+// libs
+// spdlog
+#include <spdlog/spdlog.h>
+
 // std
-#include <fstream>
 #include <memory>
 
 namespace terminal_animation {
@@ -319,14 +322,9 @@ AnimationUI::HomeDirPath(const std::string &dir_name) const {
     if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
       return path;
     } else {
-      std::ofstream debug_stream("debug_output.txt",
-                                 std::ios::app); // Debug output stream
-
-      debug_stream
-          << "[AnimationUI::HomeDirPath] Error: Given directory doesn't exist. "
-          << path << std::endl;
-
-      debug_stream.close();
+      spdlog::error(
+          "[AnimationUI::HomeDirPath] - Given directory doesn't exist: {}",
+          path.string());
     }
   }
 
