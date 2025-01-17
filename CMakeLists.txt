@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(terminal_animation VERSION 5.0.0 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.11.0)
+project(terminal_animation VERSION 5.0.1 LANGUAGES C CXX)
 
 include(CheckCXXCompilerFlag)
 include(FetchContent)
