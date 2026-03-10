@@ -3,6 +3,27 @@
 ## Turn media (video/gif/image) into colored, animated or static, ASCII art
 #### Project development and progress showcase: https://video.infosec.exchange/w/p/vYM6TsSBMGEg1DRHMADXu2
 
+**terminal_animation** is a cross-platform C++ application that converts video files, GIFs, and images into real-time colored ASCII art rendered directly in the terminal. It features a multithreaded frame-processing pipeline — one thread continuously decodes and converts frames via OpenCV/FFMPEG while another drives the FTXUI-based interactive TUI — giving smooth, low-latency playback without blocking the UI.
+
+## Features
+
+- **Real-time video/GIF/image to ASCII conversion** — plays animated media at the source frame rate directly in the terminal
+- **Full color support** — each ASCII character is colored using RGB terminal escape codes derived from the original pixel data
+- **Multithreaded frame-processing pipeline** — decoding and rendering run on separate threads synchronized with mutexes, keeping the UI responsive
+- **Interactive TUI** — FTXUI-powered interface with a live file browser, resizable ASCII output, and keyboard shortcuts
+- **Cross-platform** — tested on Linux and Windows (WSL, Visual Studio, and Terminal)
+- **Wide media format support** — any format OpenCV/FFMPEG can open: MP4, AVI, MKV, MOV, GIF, JPEG, PNG, BMP, WebP, and more
+
+## Tech Stack
+
+`C++20` `OpenCV` `FFMPEG` `FTXUI` `CMake` `vcpkg` `spdlog`
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a full description of the processing pipeline, multithreading model, and component breakdown.
+
+For a deep dive into the ASCII rendering subsystem, see [docs/RENDERING_PIPELINE.md](docs/RENDERING_PIPELINE.md).
+
 # Build
 Tested on Linux and Windows.
 
