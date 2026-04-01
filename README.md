@@ -33,8 +33,8 @@ Tested on Linux and Windows.
             * `sudo dnf install cmake git ffmpeg vtk opencv opencv-devel spdlog spdlog-devel`
         * Arch:
             * `sudo pacman -S --needed cmake git ffmpeg vtk opencv spdlog`
-        * Ubuntu:
-            * `sudo apt install cmake git ffmpeg opencv spdlog`
+        * Debian/Ubuntu:
+            * `sudo apt install cmake git ffmpeg libopencv-dev libspdlog-dev`
     * `git clone https://github.com/mikolajlubiak/terminal_animation`
     * `cd terminal_animation`
     * `mkdir build`
