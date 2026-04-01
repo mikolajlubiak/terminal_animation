@@ -11,7 +11,10 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 // std
+#include <array>
+#include <atomic>
 #include <cstdint>
+#include <filesystem>
 #include <mutex>
 #include <vector>
 
@@ -19,7 +22,7 @@ namespace terminal_animation {
 
 class MediaToAscii {
 public:
-  // Struct with the ASCII art colors and characters to print
+  // Per-character RGB color and ASCII character for one frame of output.
   struct CharsAndColors {
     std::vector<std::vector<std::array<std::uint8_t, 3>>> colors;
     std::vector<std::vector<char>> chars;
@@ -27,110 +30,70 @@ public:
 
   MediaToAscii() = default;
 
-  // Open file
-  MediaToAscii(const std::filesystem::path &file) { OpenFile(file); }
+  explicit MediaToAscii(const std::filesystem::path &file) { OpenFile(file); }
 
-  // Release the video
-  ~MediaToAscii() { m_VideoCapture.release(); }
+  ~MediaToAscii() { video_capture_.release(); }
 
-  // Open file
+  MediaToAscii(const MediaToAscii &) = delete;
+  MediaToAscii &operator=(const MediaToAscii &) = delete;
+
+  // Opens a media file (image or video/GIF).
   void OpenFile(const std::filesystem::path &file);
 
-  // Render the whole video capture to the m_CharsAndColors attribute
+  // Decodes every frame of the loaded video into chars_and_colors_.
   void RenderVideo();
 
-  // Convert a frame to ASCII chars and colors
-  void CalculateCharsAndColors(const std::uint32_t index);
+  // Converts a single frame at the given index to ASCII.
+  void CalculateCharsAndColors(std::uint32_t index);
 
-  // If the frame is already rendered return the frame else return the newest
-  // rendered frame
-  CharsAndColors GetCharsAndColors(const std::uint32_t index) const {
-    if (IsVideo()) {
-      if (GetCurrentFrameIndex() < 1) {
-        return CharsAndColors{};
-      }
+  // Returns the pre-rendered frame data at the given index.
+  // For video, returns the latest available frame if index is not yet decoded.
+  CharsAndColors GetCharsAndColors(std::uint32_t index) const;
 
-      return m_CharsAndColors[std::min(GetCurrentFrameIndex() - 1, index)];
-    }
-
-    return m_CharsAndColors[index];
-  }
-
-  // Get framerate
   std::uint32_t GetFramerate() const {
-    // Return framerate or 1 for images
     return std::max(
-        1U, static_cast<std::uint32_t>(m_VideoCapture.get(cv::CAP_PROP_FPS)));
+        1U, static_cast<std::uint32_t>(video_capture_.get(cv::CAP_PROP_FPS)));
   }
 
-  // Return currently accessed frame index
   std::uint32_t GetCurrentFrameIndex() const {
-    return m_VideoCapture.get(cv::CAP_PROP_POS_FRAMES);
+    return static_cast<std::uint32_t>(
+        video_capture_.get(cv::CAP_PROP_POS_FRAMES));
   }
 
-  // Return frame count of the currently loaded media
   std::uint32_t GetTotalFrameCount() const {
-    return m_VideoCapture.get(cv::CAP_PROP_FRAME_COUNT);
+    return static_cast<std::uint32_t>(
+        video_capture_.get(cv::CAP_PROP_FRAME_COUNT));
   }
 
-  // Get whether a video or an image is loaded
-  bool IsVideo() const { return m_IsVideo; }
+  bool IsVideo() const { return is_video_.load(); }
 
-  // Check the file extension to determine whether its an image
-  bool IsImageExtension(const std::filesystem::path &filename) const {
-    return filename.extension() == ".jpg" || filename.extension() == ".jpeg" ||
-           filename.extension() == ".png" || filename.extension() == ".bmp";
+  void SetSize(std::uint32_t size) { size_.store(size); }
+  std::uint32_t GetSize() const { return size_.load(); }
+
+  void SetContinueRendering(bool should_render) {
+    should_render_.store(should_render);
   }
 
-  // Set blocksize
-  void SetSize(const std::uint32_t size) { m_Size = size; }
-
-  // Get blocksize
-  std::uint32_t GetSize() const { return m_Size; }
-
-  // Set whether to continue rendering
-  void ContinueRendring(const bool should_render) {
-    m_ShouldRender = should_render;
+  void SetCurrentFrameIndex(std::uint32_t index) {
+    video_capture_.set(cv::CAP_PROP_POS_FRAMES, index);
   }
 
-  // Set current frame index
-  void SetCurrentFrameIndex(const std::uint32_t index) {
-    m_VideoCapture.set(cv::CAP_PROP_POS_FRAMES, index);
-  }
+private:
+  std::atomic<bool> is_video_{false};
+  std::atomic<bool> should_render_{false};
+  std::atomic<std::uint32_t> size_{1};
 
-private: // Attributes
-  // Loaded video or image
-  bool m_IsVideo = false;
+  cv::VideoCapture video_capture_;
+  cv::Mat frame_;
+  std::vector<CharsAndColors> chars_and_colors_{{}};
 
-  // Should you contine rendering?
-  bool m_ShouldRender = false;
+  mutable std::mutex mutex_chars_and_colors_;
+  std::mutex mutex_video_capture_;
+  std::mutex mutex_frame_;
 
-  // Image size
-  std::uint32_t m_Size = 1;
-
-  // Vidoe capture
-  cv::VideoCapture m_VideoCapture{};
-
-  // Video frame or image
-  cv::Mat m_Frame{};
-
-  // Vector holding the ASCII art information
-  std::vector<CharsAndColors> m_CharsAndColors{{}};
-
-  // Make sure that the m_CharsAndColors attribute doesn't get updated in two
-  // places at the same time
-  std::mutex m_MutexCharsAndColors{};
-
-  // Make sure that the video capture does't get updated in two places
-  // at the same time
-  std::mutex m_MutexVideoCapture{};
-
-  // Make sure that the frame does't get updated in two places
-  // at the same time
-  std::mutex m_MutexFrame{};
-
-  // Log debug information to a file
-  std::shared_ptr<spdlog::logger> m_Logger = spdlog::basic_logger_mt<spdlog::async_factory>("MediaToAscii", "logs/debug.txt");
+  std::shared_ptr<spdlog::logger> logger_ =
+      spdlog::basic_logger_mt<spdlog::async_factory>("MediaToAscii",
+                                                      "logs/debug.txt");
 };
 
 } // namespace terminal_animation

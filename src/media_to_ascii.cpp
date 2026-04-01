@@ -2,188 +2,144 @@
 #include "media_to_ascii.hpp"
 
 // std
+#include <algorithm>
+#include <cstdint>
 #include <filesystem>
 
 namespace terminal_animation {
 
-// Open file
 void MediaToAscii::OpenFile(const std::filesystem::path &file) {
-  // Stop the rendering while new file isn't loaded yet
-  m_ShouldRender = false;
+  should_render_.store(false);
 
-  // Check if the file is a video or an image
   if (IsImageExtension(file)) {
-    // Make sure you don't change frame while it's being used
-    // somewhere else
-    std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
-
-    // Load image
-    m_Frame = cv::imread(file.string());
-
-    if (m_Frame.empty()) {
-      m_Logger->error("[MediaToAscii::OpenFile] - Could not open image: {}",
-                    file.string());
-
+    std::lock_guard<std::mutex> lock_frame(mutex_frame_);
+    frame_ = cv::imread(file.string());
+    if (frame_.empty()) {
+      logger_->error("[MediaToAscii::OpenFile] Could not open image: {}",
+                     file.string());
       return;
     }
-
-    m_IsVideo = false;
+    is_video_.store(false);
   } else {
-
     {
-      // Make sure you don't change video capture while it's being used
-      // somewhere else
-      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
-
-      // Open the video file
-      m_VideoCapture.open(file.string());
+      std::lock_guard<std::mutex> lock_capture(mutex_video_capture_);
+      video_capture_.open(file.string());
     }
 
-    if (!m_VideoCapture.isOpened()) {
-      m_Logger->error("[MediaToAscii::OpenFile] - Could not open video: {}",
-                    file.string());
-
+    if (!video_capture_.isOpened()) {
+      logger_->error("[MediaToAscii::OpenFile] Could not open video: {}",
+                     file.string());
       return;
     }
 
-    // If the image is loaded using video capture (ffmpeg) instead of imread
-    // (has 0 frames), still treat it as an image
+    // Some image formats are opened through ffmpeg and report 0 total frames.
     if (GetTotalFrameCount() == 0) {
-      // Make sure you don't change frame while it's being used
-      // somewhere else
-      std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
-
-      m_VideoCapture >> m_Frame;
-      m_IsVideo = false;
+      std::lock_guard<std::mutex> lock_frame(mutex_frame_);
+      video_capture_ >> frame_;
+      is_video_.store(false);
     } else {
-      // Make sure to not change the m_CharsAndColors attribute while it's being
-      // used somewhere else
-      std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
-
-      // Clear and resize the vector holding ASCII art information
-      m_CharsAndColors.clear();
-      m_CharsAndColors.resize(GetTotalFrameCount());
-
-      m_IsVideo = true;
+      std::lock_guard<std::mutex> lock_data(mutex_chars_and_colors_);
+      chars_and_colors_.clear();
+      chars_and_colors_.resize(GetTotalFrameCount());
+      is_video_.store(true);
     }
   }
 
-  // Done loading the file
-  m_ShouldRender = true;
+  should_render_.store(true);
 }
 
-// Render the whole video capture to the m_CharsAndColors attribute
 void MediaToAscii::RenderVideo() {
-  // Stop the rendering while new file isn't loaded yet or when finished
-  while (GetCurrentFrameIndex() <= GetTotalFrameCount() && m_ShouldRender) {
+  while (GetCurrentFrameIndex() <= GetTotalFrameCount() &&
+         should_render_.load()) {
     {
-      // Make sure you don't change m_Frame while it's being used somewhere else
-      // Make sure that the video capture doesn't change while it's being
-      // accessed here
-      std::lock_guard<std::mutex> lockVideoCapture(m_MutexVideoCapture);
-      std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
-
-      // Read next frame from the video
-      m_VideoCapture >> m_Frame;
+      std::lock_guard<std::mutex> lock_capture(mutex_video_capture_);
+      std::lock_guard<std::mutex> lock_frame(mutex_frame_);
+      video_capture_ >> frame_;
     }
-
-    // cv::CAP_PROP_POS_FRAMES begins counting from 1
-    // (0 means frame is not loaded)
-    CalculateCharsAndColors(static_cast<std::int32_t>(GetCurrentFrameIndex()) -
-                            1);
+    // cv::CAP_PROP_POS_FRAMES starts at 1 after the first read.
+    CalculateCharsAndColors(
+        static_cast<std::uint32_t>(GetCurrentFrameIndex()) - 1);
   }
 }
 
-// Convert a frame to ASCII chars and colors
-void MediaToAscii::CalculateCharsAndColors(const std::uint32_t index) {
-  // Make sure that the m_CharsAndColors attribute doesn't get updated in two
-  // places at the same time
-  std::lock_guard<std::mutex> lockCharsAndColors(m_MutexCharsAndColors);
+void MediaToAscii::CalculateCharsAndColors(std::uint32_t index) {
+  std::lock_guard<std::mutex> lock_data(mutex_chars_and_colors_);
+  std::lock_guard<std::mutex> lock_frame(mutex_frame_);
 
-  // Make sure that the frame doesn't change while it's being accessed here
-  std::lock_guard<std::mutex> lockFrame(m_MutexFrame);
-
-  // ASCII density array
-  constexpr char density[] = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
-                             "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-
-  if (m_Frame.empty() || m_Frame.cols == 0 || m_Frame.rows == 0) {
+  if (frame_.empty() || frame_.cols == 0 || frame_.rows == 0) {
     return;
   }
 
-  // Calculate the aspect ratio of the original frame
-  const float aspectRatio =
-      static_cast<float>(m_Frame.rows) / static_cast<float>(m_Frame.cols);
+  const float aspect_ratio =
+      static_cast<float>(frame_.rows) / static_cast<float>(frame_.cols);
+  const std::uint32_t current_size = size_.load();
 
-  // Calculate the block size based on desired size
-  const std::uint32_t blockSizeX = std::max(
-      1U,
-      m_Frame.cols /
-          static_cast<std::uint32_t>(
-              m_Size * 2 / aspectRatio)); // Scale the size for X, because
-                                          // FTXUI uses 2x4 size characters
+  // Scale X for FTXUI's 2x4 character cell geometry.
+  const std::uint32_t block_size_x = std::max(
+      1U, static_cast<std::uint32_t>(frame_.cols) /
+              static_cast<std::uint32_t>(current_size * 2 / aspect_ratio));
+  const std::uint32_t block_size_y =
+      std::max(1U, static_cast<std::uint32_t>(frame_.rows) / current_size);
 
-  const std::uint32_t blockSizeY = std::max(1U, m_Frame.rows / m_Size);
+  const std::uint32_t num_blocks_x =
+      static_cast<std::uint32_t>(frame_.cols) / block_size_x;
+  const std::uint32_t num_blocks_y =
+      static_cast<std::uint32_t>(frame_.rows) / block_size_y;
 
-  // Calculate the number of blocks.
-  const std::uint32_t numBlocksX = m_Frame.cols / blockSizeX;
-  const std::uint32_t numBlocksY = m_Frame.rows / blockSizeY;
+  auto &target = chars_and_colors_[index];
+  target.chars.assign(num_blocks_x, std::vector<char>(num_blocks_y));
+  target.colors.assign(num_blocks_x,
+                       std::vector<std::array<std::uint8_t, 3>>(
+                           num_blocks_y, std::array<std::uint8_t, 3>()));
 
-  // Calculate the average colors for the entire frame and build
-  // the output string
-  m_CharsAndColors[index].chars.clear();
-  m_CharsAndColors[index].chars.resize(numBlocksX,
-                                       std::vector<char>(numBlocksY));
+  const std::uint32_t pixels_per_block = block_size_x * block_size_y;
+  const auto density_max =
+      static_cast<std::uint32_t>(kAsciiDensity.size() - 1);
 
-  m_CharsAndColors[index].colors.clear();
-  m_CharsAndColors[index].colors.resize(
-      numBlocksX, std::vector<std::array<std::uint8_t, 3>>(
-                      numBlocksY, std::array<std::uint8_t, 3>()));
-
-  for (std::uint32_t i = 0; i < numBlocksX; i++) {
-    for (std::uint32_t j = 0; j < numBlocksY; j++) {
+  for (std::uint32_t i = 0; i < num_blocks_x; i++) {
+    for (std::uint32_t j = 0; j < num_blocks_y; j++) {
       std::uint32_t sum_r = 0;
       std::uint32_t sum_g = 0;
       std::uint32_t sum_b = 0;
 
-      // Calculate the average for each block
-      for (std::uint32_t bi = 0; bi < blockSizeX; ++bi) {
-        for (std::uint32_t bj = 0; bj < blockSizeY; ++bj) {
-          const cv::Vec3b pixel =
-              m_Frame.at<cv::Vec3b>(j * blockSizeY + bj, i * blockSizeX + bi);
-
-          // OpenCV has BGR color format
-          const std::uint8_t b = pixel[0];
-          const std::uint8_t g = pixel[1];
-          const std::uint8_t r = pixel[2];
-
-          sum_r += r;
-          sum_g += g;
-          sum_b += b;
+      for (std::uint32_t bi = 0; bi < block_size_x; ++bi) {
+        for (std::uint32_t bj = 0; bj < block_size_y; ++bj) {
+          const cv::Vec3b pixel = frame_.at<cv::Vec3b>(
+              j * block_size_y + bj, i * block_size_x + bi);
+          sum_b += pixel[0];
+          sum_g += pixel[1];
+          sum_r += pixel[2];
         }
       }
 
-      // Calculate R, B and B average color value of the frame
-      // region
-      m_CharsAndColors[index].colors[i][j][0] =
-          sum_r / (blockSizeX * blockSizeY);
-      m_CharsAndColors[index].colors[i][j][1] =
-          sum_g / (blockSizeX * blockSizeY);
-      m_CharsAndColors[index].colors[i][j][2] =
-          sum_b / (blockSizeX * blockSizeY);
+      target.colors[i][j][0] =
+          static_cast<std::uint8_t>(sum_r / pixels_per_block);
+      target.colors[i][j][1] =
+          static_cast<std::uint8_t>(sum_g / pixels_per_block);
+      target.colors[i][j][2] =
+          static_cast<std::uint8_t>(sum_b / pixels_per_block);
 
-      // Calculate average luminance of the frame region
-      const unsigned long avg =
-          (sum_r + sum_g + sum_b) / (3 * blockSizeX * blockSizeY);
+      const std::uint32_t avg_luminance =
+          (sum_r + sum_g + sum_b) / (3 * pixels_per_block);
 
-      // Map average to char index
       const std::uint32_t density_index =
-          map_value(avg, 0UL, 255UL, 0UL,
-                    static_cast<unsigned long>(strlen(density) - 1));
+          MapValue(avg_luminance, 0U, 255U, 0U, density_max);
 
-      m_CharsAndColors[index].chars[i][j] = density[density_index];
+      target.chars[i][j] = kAsciiDensity[density_index];
     }
   }
+}
+
+MediaToAscii::CharsAndColors
+MediaToAscii::GetCharsAndColors(std::uint32_t index) const {
+  std::lock_guard<std::mutex> lock_data(mutex_chars_and_colors_);
+  if (IsVideo()) {
+    if (GetCurrentFrameIndex() < 1) {
+      return CharsAndColors{};
+    }
+    return chars_and_colors_[std::min(GetCurrentFrameIndex() - 1, index)];
+  }
+  return chars_and_colors_[index];
 }
 
 } // namespace terminal_animation
