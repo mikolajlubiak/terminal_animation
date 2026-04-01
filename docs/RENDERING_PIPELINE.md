@@ -35,7 +35,7 @@ cv::Mat (BGR frame)
 
 ## 1. Frame Acquisition
 
-For videos and GIFs, `MediaToAscii::RenderVideo()` calls `cv::VideoCapture::operator>>` in a loop to pull the next decoded frame into `cv::Mat m_Frame`. For static images, `cv::imread()` is used directly. Both paths store the result in the same `m_Frame` member, so the conversion logic is identical regardless of media type.
+For videos and GIFs, `MediaToAscii::RenderVideo()` calls `cv::VideoCapture::operator>>` in a loop to pull the next decoded frame into `cv::Mat frame_`. For static images, `cv::imread()` is used directly. Both paths store the result in the same `frame_` member, so the conversion logic is identical regardless of media type.
 
 OpenCV decodes frames in **BGR** (Blue-Green-Red) byte order, not the more common RGB. All channel reads in the codebase account for this:
 
@@ -67,32 +67,32 @@ Each cell represents a blockSizeX × blockSizeY region of pixels.
 Block sizes are computed as:
 
 ```
-blockSizeY = frame.rows / m_Size
-blockSizeX = frame.cols / (m_Size * 2 / aspectRatio)
+block_size_y = frame.rows / size_
+block_size_x = frame.cols / (size_ * 2 / aspect_ratio)
 ```
 
-The `* 2 / aspectRatio` factor in X corrects for FTXUI's character cell geometry. FTXUI's canvas API uses a virtual coordinate system where each cell is **2 units wide and 4 units tall** (`DrawText(i*2, j*4, ...)`). Without correction, the ASCII output would appear horizontally squished. The `2 / aspectRatio` scaling stretches the X blocks to match the terminal's character aspect ratio.
+The `* 2 / aspect_ratio` factor in X corrects for FTXUI's character cell geometry. FTXUI's canvas API uses a virtual coordinate system where each cell is **2 units wide and 4 units tall** (`DrawText(i*2, j*4, ...)`). Without correction, the ASCII output would appear horizontally squished. The `2 / aspect_ratio` scaling stretches the X blocks to match the terminal's character aspect ratio.
 
 ---
 
 ## 3. Per-Block Pixel Averaging
 
-For each block `(i, j)`, every pixel within the `blockSizeX × blockSizeY` region is summed:
+For each block `(i, j)`, every pixel within the `block_size_x × block_size_y` region is summed:
 
 ```cpp
 uint32_t sum_r = 0, sum_g = 0, sum_b = 0;
-for (uint32_t bi = 0; bi < blockSizeX; ++bi) {
-    for (uint32_t bj = 0; bj < blockSizeY; ++bj) {
-        cv::Vec3b pixel = m_Frame.at<cv::Vec3b>(
-            j * blockSizeY + bj,   // row
-            i * blockSizeX + bi    // col
+for (uint32_t bi = 0; bi < block_size_x; ++bi) {
+    for (uint32_t bj = 0; bj < block_size_y; ++bj) {
+        cv::Vec3b pixel = frame_.at<cv::Vec3b>(
+            j * block_size_y + bj,   // row
+            i * block_size_x + bi    // col
         );
         sum_b += pixel[0];
         sum_g += pixel[1];
         sum_r += pixel[2];
     }
 }
-uint32_t pixels = blockSizeX * blockSizeY;
+uint32_t pixels = block_size_x * block_size_y;
 uint8_t avg_r = sum_r / pixels;
 uint8_t avg_g = sum_g / pixels;
 uint8_t avg_b = sum_b / pixels;
@@ -118,24 +118,24 @@ The result is a value in `[0, 255]` where 0 is black and 255 is white.
 
 ## 5. Character Selection
 
-The density string maps the luminance range `[0, 255]` to a sequence of ASCII characters ordered from visually dense (dark) to visually sparse (bright):
+The density string is defined as a `constexpr std::string_view` in `common.hpp` and maps the luminance range `[0, 255]` to a sequence of ASCII characters ordered from visually dense (dark) to visually sparse (bright):
 
 ```
 "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 ```
 
-The index into this string is calculated by `map_value()`:
+The index into this string is calculated by `MapValue()`:
 
 ```cpp
-uint32_t density_index = map_value(
-    avg,                               // input
-    0UL, 255UL,                        // input range
-    0UL, (unsigned long)(strlen(density) - 1)  // output range
+uint32_t density_index = MapValue(
+    avg_luminance,                             // input
+    0U, 255U,                                  // input range
+    0U, static_cast<uint32_t>(kAsciiDensity.size() - 1)  // output range
 );
-chars[i][j] = density[density_index];
+chars[i][j] = kAsciiDensity[density_index];
 ```
 
-`map_value<T>` performs a linear interpolation:
+`MapValue<T>` performs a linear interpolation:
 
 ```
 output = new_min + (x - old_min) * (new_max - new_min) / (old_max - old_min)
@@ -152,7 +152,7 @@ The averaged RGB values are stored directly in `CharsAndColors::colors[i][j]` as
 ```cpp
 canvas.DrawText(
     i * 2, j * 4,                           // FTXUI canvas coordinates
-    std::string(1, m_CanvasData.chars[i][j]),
+    std::string(1, canvas_data_.chars[i][j]),
     ftxui::Color(r, g, b)                    // 24-bit RGB color
 );
 ```
@@ -169,39 +169,41 @@ This sets the foreground color for the character. No background color is set; th
 
 ## 7. Frame Sizing and the `m_Size` Parameter
 
-`m_Size` is the user-controlled resolution knob (range 1–128, default 32). It directly determines the number of ASCII character rows in the output:
+`size_` is the user-controlled resolution knob (range 1–128, default 32). It directly determines the number of ASCII character rows in the output:
 
 ```
-numBlocksY ≈ m_Size
-numBlocksX ≈ m_Size * 2 / aspectRatio
+num_blocks_y ≈ size_
+num_blocks_x ≈ size_ * 2 / aspect_ratio
 ```
 
-Increasing `m_Size` shrinks the pixel blocks, producing a higher-resolution ASCII image at the cost of more computation per frame. Decreasing it produces a coarser, faster render. The FTXUI Options window exposes this as a live slider; changing the value while a video is playing stops the background render thread, resets frame index to 0, and restarts rendering at the new resolution.
+Increasing `size_` shrinks the pixel blocks, producing a higher-resolution ASCII image at the cost of more computation per frame. Decreasing it produces a coarser, faster render. The FTXUI Options window exposes this as a live slider; changing the value while a video is playing stops the background render thread, resets the frame index to 0, and restarts rendering at the new resolution.
 
 ---
 
 ## 8. Animation Timing
 
-`AnimationUI::ForceUpdateCanvas()` runs on a dedicated thread and drives playback timing:
+`AnimationUI::UpdateCanvasLoop()` runs on a dedicated thread and drives playback timing:
 
 ```cpp
-while (m_ShouldRun) {
-    if (m_pMediaToAscii->IsVideo()) {
+while (should_run_.load()) {
+    if (media_to_ascii_->IsVideo()) {
+        uint32_t idx = frame_index_.load();
+
         // Copy pre-rendered frame to canvas data
-        m_CanvasData = m_pMediaToAscii->GetCharsAndColors(m_FrameIndex);
+        canvas_data_ = media_to_ascii_->GetCharsAndColors(idx);
 
         // Wake the FTXUI event loop to redraw
-        m_Screen.PostEvent(ftxui::Event::Custom);
+        screen_.PostEvent(ftxui::Event::Custom);
 
         // Advance frame index, wrapping at end
-        m_FrameIndex = (m_FrameIndex + 1) % (totalFrames + 1);
+        frame_index_.store((idx + 1) % (totalFrames + 1));
     }
 
     // Pace playback to match source FPS
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / m_FPS));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps_.load()));
 }
 ```
 
 `GetCharsAndColors()` uses a safe fallback: if the background decode thread has not yet reached `index`, it returns the most recently decoded frame instead, preventing blank frames during the initial buffering period.
 
-Playback loops indefinitely. Pressing `r` resets `m_FrameIndex` to 0 to restart from the beginning.
+Playback loops indefinitely. Pressing `r` atomically resets `frame_index_` to 0 to restart from the beginning.

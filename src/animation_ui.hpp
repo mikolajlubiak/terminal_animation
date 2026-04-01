@@ -16,9 +16,14 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 // std
+#include <atomic>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace terminal_animation {
 
@@ -26,96 +31,66 @@ class AnimationUI {
 public:
   AnimationUI();
 
-  // Create all needed components and loop
-  void MainUI();
+  // Runs the main FTXUI event loop and blocks until quit.
+  void Run();
 
-private: // Methods
-  // Update static UI
+private:
+  // FTXUI component builders
   ftxui::Component CreateRenderer();
-
-  // Create static canvas with the ASCII art
   ftxui::Element CreateCanvas();
+  ftxui::Component CreateOptionsWindow();
+  ftxui::Component CreateFileExplorer();
+  ftxui::Component CreateShortcutsWindow();
+  ftxui::ComponentDecorator CreateEventHandler();
 
-  // Window for selecting options
-  ftxui::Component GetOptionsWindow();
+  // Background thread entry: posts frame updates to the FTXUI loop.
+  void UpdateCanvasLoop();
 
-  // File explorer window
-  ftxui::Component GetFileExplorer();
-
-  // Shortcuts window
-  ftxui::Component GetShortcutsWindow();
-
-  // Handle events (shortcuts)
-  ftxui::ComponentDecorator HandleEvents();
-
-  // Force the update of canvas by submitting an event
-  void ForceUpdateCanvas();
-
-  // Return path directory contents
+  // Filesystem helpers
   std::vector<std::filesystem::path>
   GetDirContents(const std::filesystem::path &path) const;
 
-  // Directory contents in printable form
   std::vector<std::string>
-  PrintableContents(const std::vector<std::filesystem::path> &contents) const;
+  FormatDirContents(const std::vector<std::filesystem::path> &contents) const;
 
-  std::filesystem::path HomeDirPath(const std::string &dir_name) const;
+  std::filesystem::path BuildHomePath(const std::string &subdir) const;
 
-private: // Attributes
-  // Show options window
-  bool m_ShowOptions = true;
+  // Starts (or restarts) video rendering on the background thread.
+  void StartVideoRendering();
 
-  // Show shortcuts window
-  bool m_ShowShortcuts = true;
+  // UI visibility toggles
+  bool show_options_ = true;
+  bool show_shortcuts_ = true;
 
-  // Should the program be running?
-  bool m_ShouldRun = true;
+  // Main loop control
+  std::atomic<bool> should_run_{true};
 
-  // FPS of the currently animated media
-  std::uint32_t m_FPS = 1;
+  // Playback state
+  std::atomic<std::uint32_t> fps_{1};
+  std::atomic<std::uint32_t> frame_index_{0};
 
-  ftxui::ScreenInteractive m_Screen = ftxui::ScreenInteractive::Fullscreen();
+  ftxui::ScreenInteractive screen_ = ftxui::ScreenInteractive::Fullscreen();
 
-  // Handle video to animated ASCII convertion
-  std::unique_ptr<MediaToAscii> m_pMediaToAscii =
+  std::unique_ptr<MediaToAscii> media_to_ascii_ =
       std::make_unique<MediaToAscii>();
 
-  // Text that will be on canvas
-  MediaToAscii::CharsAndColors m_CanvasData{};
+  MediaToAscii::CharsAndColors canvas_data_;
+  std::mutex mutex_canvas_data_;
 
-  // Current directory
-  std::filesystem::path m_CurrentDir = std::filesystem::current_path();
+  // File explorer state
+  std::filesystem::path current_dir_ = std::filesystem::current_path();
+  std::vector<std::filesystem::path> dir_contents_;
+  std::vector<std::string> printable_dir_contents_;
+  int selected_index_ = 0;
+  int explorer_window_height_ = 0;
 
-  // List with files in the currently explored directory
-  std::vector<std::filesystem::path> m_CurrentDirContents;
+  // Background threads
+  std::thread thread_canvas_update_;
+  std::thread thread_render_video_;
 
-  // List with files in the currently explored directory
-  std::vector<std::string> m_PrintableCurrentDirContents;
-
-  // Index of the currently selected file/directory in explorer
-  int m_SelectedContentIndex = 0;
-
-  // Explorer window height
-  int m_ExplorerWindowHeight;
-
-  // Index of the frame to render
-  std::uint32_t m_FrameIndex = 0;
-
-  // Make sure that no two threads try to change the canvas data
-  std::mutex m_MutexCanvasData{};
-
-  // Make sure to not change the m_FrameIndex attribute in two places at the
-  // same time
-  std::mutex m_MutexFrameIndex{};
-
-  // Thread for updating the canvas
-  std::thread m_threadForceCanvasUpdate;
-
-  // Thread for rendering the whole video
-  std::thread m_threadRenderVideo;
-
-  // Log debug information to a file
-  std::shared_ptr<spdlog::logger> m_Logger = spdlog::basic_logger_mt<spdlog::async_factory>("AnimationUI", "logs/debug.txt");
+  std::shared_ptr<spdlog::logger> logger_ =
+      spdlog::basic_logger_mt<spdlog::async_factory>("AnimationUI",
+                                                      "logs/debug.txt");
 };
 
 } // namespace terminal_animation
