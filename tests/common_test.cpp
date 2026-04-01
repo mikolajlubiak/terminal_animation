@@ -140,6 +140,9 @@ TEST(ListDirectoryEntriesTest, ListsCurrentDirectory) {
 TEST(ListDirectoryEntriesTest, ListsTempDirWithCreatedFile) {
   auto tmp = std::filesystem::temp_directory_path() / "ta_test_dir";
   std::filesystem::create_directories(tmp);
+
+  auto cleanup = [&] { std::filesystem::remove_all(tmp); };
+
   {
     std::ofstream f(tmp / "testfile.txt");
     f << "test";
@@ -155,18 +158,21 @@ TEST(ListDirectoryEntriesTest, ListsTempDirWithCreatedFile) {
   }
   EXPECT_TRUE(found);
 
-  std::filesystem::remove_all(tmp);
+  cleanup();
 }
 
 TEST(ListDirectoryEntriesTest, ReturnsEmptyForFile) {
   auto tmp = std::filesystem::temp_directory_path() / "ta_test_file.txt";
+  auto cleanup = [&] { std::filesystem::remove(tmp); };
+
   {
     std::ofstream f(tmp);
     f << "test";
   }
   auto entries = ListDirectoryEntries(tmp);
   EXPECT_TRUE(entries.empty());
-  std::filesystem::remove(tmp);
+
+  cleanup();
 }
 
 } // namespace

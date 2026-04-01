@@ -72,17 +72,14 @@ To add support for an additional format that OpenCV does not handle natively:
    }
    ```
 
-2. **Register the file extension as an image type** (if it is a static image): In `MediaToAscii::IsImageExtension()` in `src/media_to_ascii.hpp`, add the new extension:
+2. **Register the file extension as an image type** (if it is a static image): In `IsImageExtension()` in `src/common.hpp`, add the new extension to `kImageExtensions`:
    ```cpp
-   bool IsImageExtension(const std::filesystem::path &filename) const {
-     return filename.extension() == ".jpg"  ||
-            filename.extension() == ".jpeg" ||
-            filename.extension() == ".png"  ||
-            filename.extension() == ".bmp"  ||
-            filename.extension() == ".tiff"; // ← add new extension here
-   }
+   inline constexpr std::string_view kImageExtensions[] = {
+       ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif",
+       ".heif", // ← add new extension here
+   };
    ```
-   If the format is video/animated, no change is needed — `cv::VideoCapture` will handle it automatically.
+   Extension matching is case-insensitive. If the format is video/animated, no change is needed — `cv::VideoCapture` will handle it automatically.
 
 3. **Test**: Open the new file type through the TUI file browser and verify that it renders correctly.
 
@@ -90,10 +87,10 @@ To add support for an additional format that OpenCV does not handle natively:
 
 ## How to Modify the ASCII Character Mapping
 
-The character density array is defined in `MediaToAscii::CalculateCharsAndColors()` in `src/media_to_ascii.cpp`:
+The character density string is defined in `src/common.hpp`:
 
 ```cpp
-constexpr char density[] =
+inline constexpr std::string_view kAsciiDensity =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/"
     "\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 ```
@@ -117,12 +114,14 @@ The project follows standard modern C++ conventions:
 - **Standard**: C++20 (`set(CMAKE_CXX_STANDARD 20)` in `CMakeLists.txt`).
 - **Naming**:
   - Classes and structs: `PascalCase` (e.g. `MediaToAscii`, `CharsAndColors`)
-  - Member variables: `m_PascalCase` with `m_` prefix (e.g. `m_FrameIndex`)
+  - Member variables: `snake_case_` with trailing underscore (e.g. `frame_index_`, `video_capture_`)
   - Local variables and parameters: `snake_case` (e.g. `block_size_x`)
   - Methods: `PascalCase` (e.g. `OpenFile`, `RenderVideo`)
-  - Free functions: `snake_case` (e.g. `get_file_list`, `map_value`)
+  - Free functions and constants: `PascalCase` (e.g. `MapValue`, `IsImageExtension`)
+  - Constants: `k`-prefixed `PascalCase` (e.g. `kAsciiDensity`, `kImageExtensions`)
 - **Namespaces**: Application code lives in the `terminal_animation` namespace.
 - **Headers**: Use `#pragma once` instead of include guards.
-- **Locking**: Always use `std::lock_guard` (RAII) for mutexes; never call `lock()`/`unlock()` manually.
+- **Thread safety**: Use `std::atomic` for simple shared state (booleans, counters). Use `std::lock_guard` (RAII) for mutexes protecting complex data structures; never call `lock()`/`unlock()` manually.
 - **Compiler warnings**: The build enables `-Wall -Wextra -pedantic`; new code must compile without warnings.
-- **Formatting**: Match the surrounding code style. The project does not currently ship a `.clang-format` file, so use 2-space indentation and the brace style already present in each file.
+- **Formatting**: The project ships a `.clang-format` file (Google-based style). Use 2-space indentation.
+- **Testing**: Unit tests use Google Test. Run with `cd build && ctest`.
