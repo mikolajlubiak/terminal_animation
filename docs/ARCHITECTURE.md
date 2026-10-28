@@ -8,9 +8,9 @@ This document describes the internal architecture of **terminal_animation**: how
 
 ```
 ┌──────────────┐     ┌──────────────────────────┐     ┌─────────────────┐
-│  Media File  │────▶│  Decode  (OpenCV/FFMPEG)  │────▶│  Frame Queue    │
-│  (video/gif/ │     │  cv::VideoCapture or      │     │  m_CharsAndColors│
-│   image)     │     │  cv::imread               │     │  (std::vector)  │
+│  Media File  │────▶│  Decode  (OpenCV/FFMPEG)  │────▶│  Frame cache    │
+│  (video/gif/ │     │  cv::VideoCapture or      │     │chars_and_colors_│
+│   image)     │     │  cv::imread               │     │(vector by frame)│
 └──────────────┘     └──────────────────────────┘     └────────┬────────┘
                                                                 │
                                                                 ▼
@@ -154,7 +154,7 @@ ftxui::Container::Stacked
 ## Performance Considerations
 
 - **Parallel decode and display**: `thread_render_video_` pre-renders all frames into `chars_and_colors_` as fast as OpenCV/FFMPEG can decode them, while the UI thread reads from the already-converted buffer. This decouples I/O-bound decoding from render-timing.
-- **Frame-rate pacing**: `UpdateCanvasLoop()` sleeps for exactly `1000 / FPS` milliseconds between updates, matching the source frame rate without busy-waiting.
+- **Frame-rate pacing**: `UpdateCanvasLoop()` sleeps for `1000 / FPS` milliseconds (integer division) between updates, approximating the source frame rate without busy-waiting.
 - **Aspect ratio correction**: `block_size_x` uses `size_ * 2 / aspect_ratio` to account for FTXUI's 2×4 pixel character cell geometry, preserving the visual aspect ratio in the terminal.
 - **Block averaging**: Instead of mapping every pixel individually, pixels are grouped into rectangular blocks and their average color/luminance is computed. The block size is derived from `size_`, allowing the user to trade resolution for performance via the Options slider.
-- **Lock granularity**: Each mutex covers only the specific data structure it protects, minimizing contention between the render and decode threads. Simple shared counters and flags use `std::atomic` to avoid mutex overhead entirely.
+- **Lock granularity**: Each mutex covers one data structure (capture, current frame, converted frames, canvas data). Simple shared counters and flags use `std::atomic` instead of a mutex.

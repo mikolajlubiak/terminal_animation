@@ -22,7 +22,7 @@ sudo pacman -S --needed cmake git ffmpeg vtk opencv spdlog
 
 **Ubuntu:**
 ```bash
-sudo apt install cmake git ffmpeg opencv spdlog
+sudo apt install cmake git ffmpeg libopencv-dev libspdlog-dev
 ```
 
 Then clone and build:

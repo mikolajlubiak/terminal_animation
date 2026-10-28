@@ -3,7 +3,7 @@
 ## Turn media (video/gif/image) into colored, animated or static, ASCII art
 #### Project development and progress showcase: https://video.infosec.exchange/w/p/vYM6TsSBMGEg1DRHMADXu2
 
-**terminal_animation** is a cross-platform C++ application that converts video files, GIFs, and images into real-time colored ASCII art rendered directly in the terminal. It features a multithreaded frame-processing pipeline — one thread continuously decodes and converts frames via OpenCV/FFMPEG while another drives the FTXUI-based interactive TUI — giving smooth, low-latency playback without blocking the UI.
+**terminal_animation** is a cross-platform C++ application that converts video files, GIFs, and images into real-time colored ASCII art rendered directly in the terminal. It features a multithreaded frame-processing pipeline: a background thread decodes frames via OpenCV/FFMPEG and converts them to colored characters, a pacing thread hands the next frame to the UI at the source frame rate, and the main thread runs the FTXUI-based interactive TUI, so decoding never stalls the interface.
 
 ## Features
 
